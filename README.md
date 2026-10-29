@@ -47,6 +47,18 @@ Catatan:
 - URL hasil deploy bersifat **publik tanpa autentikasi**. Jika perlu dibatasi, gunakan password protection Netlify atau letakkan di balik VPN/internal.
 - Jangan pasang header `X-Frame-Options` atau CSP `frame-ancestors` yang memblokir, karena aplikasi ini memang dirancang di-embed sebagai webview di Alfa Teve.
 
+### Badge "Powered by Netlify"
+
+Pada paket gratis, Netlify menyuntik iframe `#nl-badge-frame` (fixed, 197×64 px, `z-index` maksimum) di pojok kanan bawah. Di layar ponsel badge itu menutupi tombol aksi bawah seperti Filter dan "Saya Sudah Bayar".
+
+Solusinya bukan menyembunyikan badge (tidak diizinkan pada paket free), melainkan layout adaptif:
+
+- `src/hooks/useHostBottomOffset.ts` mengukur tinggi badge dan mengecek apakah badge beririsan dengan frame 480px.
+- Hasilnya dipasang sebagai CSS variable `--host-bottom-offset` di `src/app/page.tsx`.
+- `StickyActionBar`, `HotelFilterButton`, dan padding bawah tiap layar memakai `var(--host-bottom-offset, 0px)`.
+
+Efeknya: offset 64px di ponsel, 0px di desktop lebar, dan 0px di webview Alfa Teve (tanpa badge). Untuk menghapus badge sepenuhnya perlu Netlify Pro atau pindah ke hosting lain.
+
 ## Alur 6 Layar
 
 | Step | Layar | Komponen |
