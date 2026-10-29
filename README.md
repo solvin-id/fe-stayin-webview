@@ -49,13 +49,18 @@ Catatan:
 
 ### Badge "Powered by Netlify"
 
-Pada paket gratis, Netlify menyuntik iframe `#nl-badge-frame` (fixed, 197×64 px, `z-index` maksimum) di pojok kanan bawah. Di layar ponsel badge itu menutupi tombol aksi bawah seperti Filter dan "Saya Sudah Bayar".
+Pada paket gratis, Netlify menyuntik iframe `#nl-badge-frame` (fixed, 197×64 px, `z-index` maksimum) di pojok kanan bawah. Di layar ponsel badge itu menutupi tombol aksi bawah.
 
 Solusinya bukan menyembunyikan badge (tidak diizinkan pada paket free), melainkan layout adaptif:
 
 - `src/hooks/useHostBottomOffset.ts` mengukur tinggi badge dan mengecek apakah badge beririsan dengan frame 480px.
 - Hasilnya dipasang sebagai CSS variable `--host-bottom-offset` di `src/app/page.tsx`.
-- `StickyActionBar`, `HotelFilterButton`, dan padding bawah tiap layar memakai `var(--host-bottom-offset, 0px)`.
+
+Penerapannya:
+
+- **Tombol Filter** (satu-satunya elemen floating di bawah) memakai offset pada `padding-bottom` pembungkusnya.
+- **Bar aksi bawah** (`StickyActionBar`) sengaja **tidak floating** — ia mengalir normal di akhir konten, dan hanya `padding-bottom`-nya yang ditambah offset. Jadi tombol "Lanjut Bayar" dan "Saya Sudah Bayar" tetap terlihat penuh saat halaman di-scroll sampai bawah.
+- **Toast** tampil di **atas layar**, di bawah header (`pt-[calc(env(safe-area-inset-top,0px)+64px)]`), supaya tidak menutupi tombol aksi mana pun.
 
 Efeknya: offset 64px di ponsel, 0px di desktop lebar, dan 0px di webview Alfa Teve (tanpa badge). Untuk menghapus badge sepenuhnya perlu Netlify Pro atau pindah ke hosting lain.
 
