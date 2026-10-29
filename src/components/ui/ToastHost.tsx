@@ -32,7 +32,7 @@ export const ToastHost = () => {
   const Icon = ICONS[toast.tone];
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-28 z-[60] flex justify-center px-4">
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex justify-center px-4 pt-[calc(env(safe-area-inset-top,0px)+64px)]">
       <div
         role="status"
         className={cn(
