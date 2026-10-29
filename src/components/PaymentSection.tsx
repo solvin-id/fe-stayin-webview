@@ -51,7 +51,7 @@ export const PaymentSection = () => {
       <StepProgress activeIndex={2} />
 
 
-      <div className="flex-1 space-y-2.5 px-3 pb-32 pt-1">
+      <div className="flex-1 space-y-2.5 px-3 pb-[calc(8rem+var(--host-bottom-offset,0px))] pt-1">
         <section className="rounded-2xl border border-slate-100 bg-white p-3.5 shadow-card">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">

@@ -63,7 +63,7 @@ export const HotelsScreen = () => {
         <SearchSummaryBar search={search} onOpen={() => setPickerOpen(true)} />
       </div>
 
-      <div className="flex-1 space-y-2.5 px-3 pb-24 pt-2.5">
+      <div className="flex-1 space-y-2.5 px-3 pb-[calc(6rem+var(--host-bottom-offset,0px))] pt-2.5">
         <div className="flex items-center justify-between px-0.5">
           <h2 className="text-[15px] font-bold text-slate-900">
             {cityFilter ? `Hotel di ${cityFilter}` : 'Rekomendasi Hotel'}

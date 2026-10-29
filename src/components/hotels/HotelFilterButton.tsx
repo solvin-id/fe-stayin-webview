@@ -8,7 +8,7 @@ interface HotelFilterButtonProps {
 }
 
 export const HotelFilterButton = ({ activeCity, onClick }: HotelFilterButtonProps) => (
-  <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[480px] justify-end px-3 pb-[calc(env(safe-area-inset-bottom,0px)+16px)]">
+  <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[480px] justify-end px-3 pb-[calc(env(safe-area-inset-bottom,0px)+16px+var(--host-bottom-offset,0px))]">
     <button
       type="button"
       onClick={onClick}

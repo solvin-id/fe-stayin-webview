@@ -1,12 +1,14 @@
 'use client';
 
 import { useCallback } from 'react';
+import type { CSSProperties } from 'react';
 import { CheckoutSection } from '@/components/CheckoutSection';
 import { PaymentSection } from '@/components/PaymentSection';
 import { HotelsScreen } from '@/components/hotels/HotelsScreen';
 import { RoomsScreen } from '@/components/rooms/RoomsScreen';
 import { VoucherSection } from '@/components/VoucherSection';
 import { ToastHost } from '@/components/ui/ToastHost';
+import { useHostBottomOffset } from '@/hooks/useHostBottomOffset';
 import { useHostContext } from '@/hooks/useHostContext';
 import { useWebviewBack } from '@/hooks/useWebviewBack';
 import { closeWebview } from '@/services/bridge.service';
@@ -20,6 +22,7 @@ export default function Page() {
   const closeRoomDetail = useBookingStore((state) => state.closeRoomDetail);
   const showToast = useBookingStore((state) => state.showToast);
   const { isEmbedded } = useHostContext();
+  const bottomOffset = useHostBottomOffset();
 
   const handleBack = useCallback(() => {
     if (step === 2) {
@@ -54,7 +57,10 @@ export default function Page() {
   });
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div
+      className="flex flex-1 flex-col"
+      style={{ '--host-bottom-offset': `${bottomOffset}px` } as CSSProperties}
+    >
       {step === 1 ? <HotelsScreen /> : null}
       {(step === 2 || step === 3) && selectedHotelId ? <RoomsScreen /> : null}
       {step === 4 && selectedRoomId ? <CheckoutSection /> : null}
