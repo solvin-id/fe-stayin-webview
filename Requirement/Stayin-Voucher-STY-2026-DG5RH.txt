@@ -1,0 +1,14 @@
+E-VOUCHER STAYIN
+================
+Kode Reservasi : STY-2026-DG5RH
+Hotel          : Grand Horizon Hotel Solo
+Alamat         : Jl. Slamet Riyadi No. 128, Surakarta
+Check-in       : Sab, 14 Nov 2026 (mulai 14:00)
+Check-out      : Sen, 16 Nov 2026 (sebelum 12:00)
+Kamar          : Deluxe King Room - Termasuk Sarapan 2 Orang
+Tamu Menginap  : Rian Kusuma
+Jumlah Tamu    : 2 tamu, 1 kamar
+Total Bayar    : Rp 1.600.000 (LUNAS)
+Metode Bayar   : BCA Virtual Account
+
+Tunjukkan voucher ini beserta identitas saat check-in.
