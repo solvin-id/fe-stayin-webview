@@ -17,6 +17,11 @@ const config: Config = {
           soft: '#FFF3ED',
           ink: '#D93800',
         },
+        whatsapp: {
+          DEFAULT: '#25D366',
+          hover: '#1DA851',
+          dark: '#128C7E',
+        },
         canvas: '#F7F9FA',
         success: '#10B981',
       },

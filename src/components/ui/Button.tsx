@@ -3,7 +3,7 @@ import type { ButtonHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'action' | 'outline' | 'ghost' | 'success';
+  variant?: 'primary' | 'action' | 'outline' | 'ghost' | 'success' | 'whatsapp';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
   fullWidth?: boolean;
@@ -34,6 +34,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           'bg-primary text-white hover:bg-primary-hover': variant === 'primary',
           'bg-action text-white shadow-md shadow-action/20 hover:bg-action-hover':
             variant === 'action',
+          'bg-whatsapp text-white shadow-md shadow-whatsapp/20 hover:bg-whatsapp-hover':
+            variant === 'whatsapp',
           'border border-primary/40 bg-white text-primary hover:bg-primary-surface':
             variant === 'outline',
           'text-slate-600 hover:bg-slate-100': variant === 'ghost',

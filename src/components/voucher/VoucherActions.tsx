@@ -35,7 +35,7 @@ export const VoucherActions = ({ booking }: { booking: Booking }) => {
 
   return (
     <div className="space-y-2">
-      <Button variant="action" size="lg" fullWidth onClick={handleWhatsApp}>
+      <Button variant="whatsapp" size="lg" fullWidth onClick={handleWhatsApp}>
         <MessageCircle size={17} /> Kirim Voucher ke WhatsApp
       </Button>
       <Button variant="outline" size="lg" fullWidth onClick={handleDownload}>

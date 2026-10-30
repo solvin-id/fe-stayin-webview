@@ -18,7 +18,10 @@ npm run dev
 # Demo mode "terhubung Alfa Teve" (badge + auto-fill profil):
 # http://localhost:3000/?token=demo-jwt&tenant_id=HTL-SOLO-01&source=alfateve
 
-# 4. Build produksi
+# 4. Unit test (Vitest)
+npm test
+
+# 5. Build produksi
 npm run build
 npm start
 ```
@@ -98,7 +101,7 @@ Palet resmi Stayin (menggantikan biru lama):
 | Putih | `#FFFFFF` | `white` | Latar kartu & teks di atas orange |
 | Hitam ke biru tua | `#05071C` | `slate-900`/`#0F172A` | Teks utama, QR code |
 
-Aksen CTA sekunder tetap memakai token `action` (`#FF5E1F`) agar beda tipis dengan `primary`. Semua warna didefinisikan di `tailwind.config.ts`; `themeColor` browser ada di `src/app/layout.tsx`.
+Aksen CTA sekunder tetap memakai token `action` (`#FF5E1F`) agar beda tipis dengan `primary`. Tombol "Kirim Voucher ke WhatsApp" memakai token `whatsapp` (`#25D366`, hover `#1DA851`) lewat `variant="whatsapp"` di `Button`. Semua warna didefinisikan di `tailwind.config.ts`; `themeColor` browser ada di `src/app/layout.tsx`.
 
 ## Struktur
 
