@@ -31,7 +31,7 @@ export const VirtualAccountPanel = ({ method, amount, onCopy }: VirtualAccountPa
     <section className="animate-fade-in rounded-2xl border border-slate-100 bg-white p-3.5 shadow-card">
       <div className="flex items-center justify-between">
         <h2 className="text-[13px] font-bold text-slate-900">{method.name}</h2>
-        <Badge tone="blue">{method.badge}</Badge>
+        <Badge tone="brand">{method.badge}</Badge>
       </div>
 
       <div className="mt-2.5 rounded-xl border border-dashed border-primary/40 bg-primary-surface/60 p-3">

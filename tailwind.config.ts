@@ -6,10 +6,10 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#0194F3',
-          hover: '#007CE8',
-          dark: '#0A64A4',
-          surface: '#EBF5FF',
+          DEFAULT: '#EB6430',
+          hover: '#DF4F16',
+          dark: '#B03E11',
+          surface: '#FDF0EA',
         },
         action: {
           DEFAULT: '#FF5E1F',

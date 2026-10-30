@@ -85,6 +85,21 @@ State dialirkan lewat satu Zustand store (`src/stores/useBookingStore.ts`), sehi
 - Filter tetap tersimpan saat pengguna masuk ke daftar kamar lalu kembali, dan baru dibersihkan saat memulai pemesanan baru.
 - Data katalog ada di `src/data/hotelCatalog.ts` (7 hotel di Surakarta, Yogyakarta, Semarang, Magelang); helper query ada di `src/data/hotels.ts`, logika filter di `src/lib/hotelFilter.ts`.
 
+## Palet Warna
+
+Palet resmi Stayin (menggantikan biru lama):
+
+| Warna | Hex | Token Tailwind | Pemakaian |
+| --- | --- | --- | --- |
+| Orange | `#EB6430` | `primary` | Header, tombol utama, step aktif, ikon & teks aksen |
+| Orange hover | `#DF4F16` | `primary-hover` | State hover/pressed elemen primary |
+| Orange gelap | `#B03E11` | `primary-dark` | Teks di atas latar `primary-surface` |
+| Orange muda | `#FDF0EA` | `primary-surface` | Badge terpilih, info box, panel VA |
+| Putih | `#FFFFFF` | `white` | Latar kartu & teks di atas orange |
+| Hitam ke biru tua | `#05071C` | `slate-900`/`#0F172A` | Teks utama, QR code |
+
+Aksen CTA sekunder tetap memakai token `action` (`#FF5E1F`) agar beda tipis dengan `primary`. Semua warna didefinisikan di `tailwind.config.ts`; `themeColor` browser ada di `src/app/layout.tsx`.
+
 ## Struktur
 
 ```
