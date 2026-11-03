@@ -2,6 +2,8 @@
 
 Frontend booking engine untuk **Alfa Teve** (in-app webview). Next.js 15 App Router, TypeScript strict, Tailwind CSS, Zustand, Lucide. Berjalan penuh dengan mock data — tanpa backend.
 
+> **Untuk tim backend:** lihat [INTEGRASI-BE.md](./INTEGRASI-BE.md) — daftar file data mock, titik integrasi API, dan kontrak tipe datanya.
+
 ## Perintah Terminal
 
 ```bash
