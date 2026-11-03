@@ -89,6 +89,24 @@ export interface HotelListing {
   rooms: Room[];
 }
 
+/** Grup/management hotel yang menaungi beberapa properti. */
+export interface HotelGroup {
+  id: string;
+  name: string;
+  tagline: string;
+  description: string;
+  established: number;
+  headquarters: string;
+  hotelIds: string[];
+  services: string[];
+  highlight: string;
+  heroImage: string;
+}
+
+export interface HotelGroupWithHotels extends HotelGroup {
+  hotels: Hotel[];
+}
+
 export interface CityOption {
   city: string;
   count: number;

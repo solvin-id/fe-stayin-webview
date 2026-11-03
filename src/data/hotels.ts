@@ -49,11 +49,3 @@ export const getLowestNightlyRate = (hotelId?: string | null): number => {
 };
 
 export const getCityOptions = (): CityOption[] => buildCityOptions(HOTELS);
-
-/** Id hotel yang bermitra dengan Alfa Teve, ditampilkan pada carousel beranda. */
-const ALFA_TEVE_PARTNER_IDS = ['HTL-SOLO-01', 'HTL-YOG-01', 'HTL-SMG-01', 'HTL-SOLO-03'];
-
-export const getAlfaTevePartnerHotels = (): HotelListing[] =>
-  ALFA_TEVE_PARTNER_IDS.map((id) => getHotelListing(id)).filter(
-    (listing): listing is HotelListing => Boolean(listing)
-  );

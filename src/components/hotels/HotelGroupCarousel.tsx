@@ -2,21 +2,19 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { ArrowRight, Star } from 'lucide-react';
-import { formatCurrency, formatDecimal } from '@/lib/formatters';
-import { getLowestNightlyRate } from '@/data/hotels';
+import { ArrowRight, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { HotelListing } from '@/types/booking';
+import type { HotelGroupWithHotels } from '@/types/booking';
 
 const AUTOPLAY_MS = 5000;
 const RESUME_AFTER_MS = 6000;
 
-interface PartnerHotelCarouselProps {
-  listings: HotelListing[];
-  onSelect: (hotelId: string) => void;
+interface HotelGroupCarouselProps {
+  groups: HotelGroupWithHotels[];
+  onSelect: (groupId: string) => void;
 }
 
-export const PartnerHotelCarousel = ({ listings, onSelect }: PartnerHotelCarouselProps) => {
+export const HotelGroupCarousel = ({ groups, onSelect }: HotelGroupCarouselProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const trackRef = useRef<HTMLDivElement | null>(null);
@@ -32,25 +30,25 @@ export const PartnerHotelCarousel = ({ listings, onSelect }: PartnerHotelCarouse
     track.scrollTo({ left: track.clientWidth * index, behavior: 'smooth' });
   };
 
+  const goToSlide = (index: number) => {
+    setActiveIndex(index);
+    scrollToIndex(index);
+  };
+
   const handleScroll = () => {
     const track = trackRef.current;
     if (!track) {
       return;
     }
     const nextIndex = Math.round(track.scrollLeft / track.clientWidth);
-    const clamped = Math.min(listings.length - 1, Math.max(0, nextIndex));
+    const clamped = Math.min(groups.length - 1, Math.max(0, nextIndex));
     if (clamped !== activeIndexRef.current) {
       setActiveIndex(clamped);
     }
   };
 
-  const goToSlide = (index: number) => {
-    setActiveIndex(index);
-    scrollToIndex(index);
-  };
-
   useEffect(() => {
-    if (paused || listings.length < 2) {
+    if (paused || groups.length < 2) {
       return;
     }
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -58,12 +56,11 @@ export const PartnerHotelCarousel = ({ listings, onSelect }: PartnerHotelCarouse
     }
 
     const timer = window.setInterval(() => {
-      const next = (activeIndexRef.current + 1) % listings.length;
-      goToSlide(next);
+      goToSlide((activeIndexRef.current + 1) % groups.length);
     }, AUTOPLAY_MS);
 
     return () => window.clearInterval(timer);
-  }, [paused, listings.length]);
+  }, [paused, groups.length]);
 
   useEffect(() => {
     if (!paused) {
@@ -73,18 +70,16 @@ export const PartnerHotelCarousel = ({ listings, onSelect }: PartnerHotelCarouse
     return () => window.clearTimeout(timer);
   }, [paused]);
 
-  if (listings.length === 0) {
+  if (groups.length === 0) {
     return null;
   }
 
   return (
-    <section aria-label="Hotel mitra Alfa Teve" className="space-y-1.5">
+    <section aria-label="Rekomendasi Grup Hotel" className="space-y-1.5">
       <div className="flex items-center justify-between px-0.5">
-        <h2 className="flex items-center gap-1 text-[13px] font-bold text-slate-900">
-          Hotel Mitra Alfa Teve
-        </h2>
+        <h2 className="text-[13px] font-bold text-slate-900">Rekomendasi Grup Hotel</h2>
         <span className="text-[10px] font-semibold text-slate-400">
-          {listings.length} properti pilihan
+          {groups.length} grup terdaftar
         </span>
       </div>
 
@@ -96,36 +91,33 @@ export const PartnerHotelCarousel = ({ listings, onSelect }: PartnerHotelCarouse
           onTouchStart={() => setPaused(true)}
           className="no-scrollbar flex w-full snap-x snap-mandatory overflow-x-auto rounded-2xl"
         >
-          {listings.map(({ hotel }, index) => (
+          {groups.map((group, index) => (
             <button
-              key={hotel.id}
+              key={group.id}
               type="button"
-              onClick={() => onSelect(hotel.id)}
-              aria-label={`Buka hotel mitra ${hotel.name}`}
-              className="relative h-[140px] w-full shrink-0 snap-center overflow-hidden text-left"
+              onClick={() => onSelect(group.id)}
+              aria-label={`Buka grup hotel ${group.name}`}
+              className="relative h-[150px] w-full shrink-0 snap-center overflow-hidden text-left"
             >
               <Image
-                src={hotel.heroImage}
-                alt={hotel.name}
+                src={group.heroImage}
+                alt={group.name}
                 fill
                 sizes="480px"
                 priority={index === 0}
                 className="object-cover"
               />
-              <span className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent" />
+              <span className="absolute inset-0 bg-gradient-to-t from-slate-900/92 via-slate-900/50 to-transparent" />
 
               <span className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3">
                 <span className="min-w-0">
-                  <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-400/95 px-1.5 py-0.5 text-[9px] font-bold text-amber-950">
-                    <Star size={9} className="fill-amber-900 text-amber-900" />
-                    {formatDecimal(hotel.rating)} · Bintang {hotel.starRating}
+                  <span className="inline-flex items-center gap-1 rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-bold text-white">
+                    <Building2 size={9} /> {group.hotels.length} hotel
                   </span>
                   <span className="mt-1 block truncate text-[14px] font-bold leading-tight text-white">
-                    {hotel.name}
+                    {group.name}
                   </span>
-                  <span className="block truncate text-[10px] text-white/75">
-                    {hotel.city} · mulai {formatCurrency(getLowestNightlyRate(hotel.id))}/malam
-                  </span>
+                  <span className="block truncate text-[10px] text-white/75">{group.tagline}</span>
                 </span>
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/95 text-primary">
                   <ArrowRight size={15} />
@@ -136,15 +128,15 @@ export const PartnerHotelCarousel = ({ listings, onSelect }: PartnerHotelCarouse
         </div>
 
         <div className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-slate-900/40 px-1">
-          {listings.map(({ hotel }, index) => (
+          {groups.map((group, index) => (
             <button
-              key={`dot-${hotel.id}`}
+              key={`dot-${group.id}`}
               type="button"
               onClick={() => {
                 setPaused(true);
                 goToSlide(index);
               }}
-              aria-label={`Banner ${index + 1}`}
+              aria-label={`Grup ${index + 1}`}
               aria-current={index === activeIndex}
               className="flex h-8 w-5 items-center justify-center"
             >

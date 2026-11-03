@@ -80,14 +80,18 @@ Efeknya: offset 64px di ponsel, 0px di desktop lebar, dan 0px di webview Alfa Te
 
 State dialirkan lewat satu Zustand store (`src/stores/useBookingStore.ts`), sehingga pindah layar tidak kehilangan data. Setelah pembayaran, tombol **Cari Hotel Lain** memanggil `startNewBooking()` untuk mereset pilihan hotel/kamar **dan filter** lalu kembali ke layar 1.
 
-### Carousel Hotel Mitra Alfa Teve
+### Carousel Rekomendasi Grup Hotel
 
-Di bawah bar tanggal (dan tepat di atas judul "Rekomendasi Hotel") ada carousel banner hotel mitra Alfa Teve (`src/components/hotels/PartnerHotelCarousel.tsx`):
+Di bawah bar tanggal (dan tepat di atas judul "Rekomendasi Hotel") ada carousel **Rekomendasi Grup Hotel** (`src/components/hotels/HotelGroupCarousel.tsx`):
 
-- 4 properti pilihan, didaftarkan lewat `getAlfaTevePartnerHotels()` di `src/data/hotels.ts` (array `ALFA_TEVE_PARTNER_IDS` — ubah di satu tempat bila daftar mitra berubah).
-- Auto-geser tiap 5 detik, bisa digeser manual, indikator titik bisa diketuk. Berhenti sementara saat disentuh dan lanjut lagi setelah 6 detik.
-- Otomatis tidak auto-geser bila perangkat mengaktifkan `prefers-reduced-motion`.
-- Tiap banner menampilkan foto hotel, rating, jumlah bintang, kota, dan harga terendah per malam. Mengetuk banner langsung membuka daftar kamar hotel tersebut.
+- 4 grup hotel, datanya di `src/data/hotelGroups.ts` (`HOTEL_GROUPS`). Nama, profil, dan layanan grup adalah data contoh.
+- Tiap banner menampilkan foto grup, jumlah hotel, nama grup, dan tagline. Auto-geser 5 detik, bisa digeser manual, indikator titik bisa diketuk, dan berhenti sementara saat disentuh.
+- Mengetuk banner membuka **halaman profil grup** (`hotels/HotelGroupDetail.tsx`) berisi:
+  - profil grup (deskripsi, tahun berdiri, kantor pusat, keunggulan),
+  - daftar **layanan grup** secara keseluruhan,
+  - **daftar hotel** di dalam grup, lengkap dengan rating, harga terendah, dan tombol "Lihat Kamar" yang langsung masuk ke daftar kamar hotel tersebut.
+
+State grup aktif disimpan sebagai `activeGroupId` di `useBookingStore`; memilih hotel dari halaman grup otomatis menutup grup dan masuk ke alur pemesanan biasa.
 
 ### Search & Filter Kota (Layar 1)
 

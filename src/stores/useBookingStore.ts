@@ -46,6 +46,9 @@ interface BookingStore {
   payment: PaymentInfo;
   booking: Booking | null;
   toast: ToastMessage | null;
+  activeGroupId: string | null;
+  openGroup: (groupId: string) => void;
+  closeGroup: () => void;
   selectHotel: (hotelId: string) => void;
   openRoomDetail: (roomId: string, packageId: string) => void;
   closeRoomDetail: () => void;
@@ -79,10 +82,16 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
   payment: initialPayment,
   booking: null,
   toast: null,
+  activeGroupId: null,
+
+  openGroup: (activeGroupId) => set({ activeGroupId }),
+
+  closeGroup: () => set({ activeGroupId: null }),
 
   selectHotel: (hotelId) =>
     set({
       step: 2,
+      activeGroupId: null,
       selectedHotelId: hotelId,
       selectedRoomId: null,
       selectedPackageId: null,
@@ -206,6 +215,7 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       step: 1,
       hotelQuery: '',
       cityFilter: null,
+      activeGroupId: null,
       selectedHotelId: null,
       selectedRoomId: null,
       selectedPackageId: null,
