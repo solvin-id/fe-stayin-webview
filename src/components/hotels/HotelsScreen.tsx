@@ -7,11 +7,12 @@ import { HotelSearchBar } from '@/components/search/HotelSearchBar';
 import { DateGuestPickerModal } from '@/components/DateGuestPickerModal';
 import { HotelList, HotelListSkeleton } from '@/components/hotels/HotelList';
 import { HotelFilterButton } from '@/components/hotels/HotelFilterButton';
+import { PartnerHotelCarousel } from '@/components/hotels/PartnerHotelCarousel';
 import { CityFilterSheet } from '@/components/hotels/CityFilterSheet';
 import { useBookingStore } from '@/stores/useBookingStore';
 import { useHostContext } from '@/hooks/useHostContext';
 import { closeWebview } from '@/services/bridge.service';
-import { HOTELS } from '@/data/hotels';
+import { HOTELS, getAlfaTevePartnerHotels } from '@/data/hotels';
 import { buildCityOptions, filterHotels } from '@/lib/hotelFilter';
 
 export const HotelsScreen = () => {
@@ -30,6 +31,7 @@ export const HotelsScreen = () => {
   const [loading, setLoading] = useState(true);
 
   const cityOptions = useMemo(() => buildCityOptions(HOTELS), []);
+  const partnerHotels = useMemo(() => getAlfaTevePartnerHotels(), []);
   const listings = useMemo(
     () => filterHotels(HOTELS, hotelQuery, cityFilter),
     [hotelQuery, cityFilter]
@@ -64,6 +66,8 @@ export const HotelsScreen = () => {
       </div>
 
       <div className="flex-1 space-y-2.5 px-3 pb-[calc(6rem+var(--host-bottom-offset,0px))] pt-2.5">
+        <PartnerHotelCarousel listings={partnerHotels} onSelect={selectHotel} />
+
         <div className="flex items-center justify-between px-0.5">
           <h2 className="text-[15px] font-bold text-slate-900">
             {cityFilter ? `Hotel di ${cityFilter}` : 'Rekomendasi Hotel'}

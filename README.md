@@ -80,6 +80,15 @@ Efeknya: offset 64px di ponsel, 0px di desktop lebar, dan 0px di webview Alfa Te
 
 State dialirkan lewat satu Zustand store (`src/stores/useBookingStore.ts`), sehingga pindah layar tidak kehilangan data. Setelah pembayaran, tombol **Cari Hotel Lain** memanggil `startNewBooking()` untuk mereset pilihan hotel/kamar **dan filter** lalu kembali ke layar 1.
 
+### Carousel Hotel Mitra Alfa Teve
+
+Di bawah bar tanggal (dan tepat di atas judul "Rekomendasi Hotel") ada carousel banner hotel mitra Alfa Teve (`src/components/hotels/PartnerHotelCarousel.tsx`):
+
+- 4 properti pilihan, didaftarkan lewat `getAlfaTevePartnerHotels()` di `src/data/hotels.ts` (array `ALFA_TEVE_PARTNER_IDS` — ubah di satu tempat bila daftar mitra berubah).
+- Auto-geser tiap 5 detik, bisa digeser manual, indikator titik bisa diketuk. Berhenti sementara saat disentuh dan lanjut lagi setelah 6 detik.
+- Otomatis tidak auto-geser bila perangkat mengaktifkan `prefers-reduced-motion`.
+- Tiap banner menampilkan foto hotel, rating, jumlah bintang, kota, dan harga terendah per malam. Mengetuk banner langsung membuka daftar kamar hotel tersebut.
+
 ### Search & Filter Kota (Layar 1)
 
 - Field search berada di area sticky tepat di bawah header, mencocokkan **nama hotel, kota, dan alamat** secara case-insensitive.
