@@ -70,11 +70,12 @@ export const HotelsScreen = () => {
       <div className="flex-1 space-y-2.5 px-3 pb-[calc(6rem+var(--host-bottom-offset,0px))] pt-2.5">
         <HotelGroupCarousel groups={partnerHotels} onSelect={openGroup} />
 
-        <div className="flex items-center justify-between px-0.5">
+        <div className="flex items-center gap-2 px-0.5 pb-1 pt-4">
           <h2 className="text-[15px] font-bold text-slate-900">
             {cityFilter ? `Hotel di ${cityFilter}` : 'Rekomendasi Hotel'}
           </h2>
           <span className="text-[11px] text-slate-500">{listings.length} hotel tersedia</span>
+          <span className="h-px flex-1 bg-slate-200" aria-hidden="true" />
         </div>
 
         {loading ? (

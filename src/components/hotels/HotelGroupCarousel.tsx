@@ -75,9 +75,15 @@ export const HotelGroupCarousel = ({ groups, onSelect }: HotelGroupCarouselProps
   }
 
   return (
-    <section aria-label="Rekomendasi Grup Hotel" className="space-y-1.5">
+    <section
+      aria-label="Rekomendasi Grup Hotel"
+      className="space-y-2 rounded-2xl border border-slate-100 bg-white p-2.5 shadow-card"
+    >
       <div className="flex items-center justify-between px-0.5">
-        <h2 className="text-[13px] font-bold text-slate-900">Rekomendasi Grup Hotel</h2>
+        <h2 className="flex items-center gap-1.5 text-[14px] font-bold text-slate-900">
+          <span className="h-3.5 w-1 rounded-full bg-primary" aria-hidden="true" />
+          Rekomendasi Grup Hotel
+        </h2>
         <span className="text-[10px] font-semibold text-slate-400">
           {groups.length} grup terdaftar
         </span>
@@ -89,7 +95,7 @@ export const HotelGroupCarousel = ({ groups, onSelect }: HotelGroupCarouselProps
           onScroll={handleScroll}
           onPointerDown={() => setPaused(true)}
           onTouchStart={() => setPaused(true)}
-          className="no-scrollbar flex w-full snap-x snap-mandatory overflow-x-auto rounded-2xl"
+          className="no-scrollbar flex w-full snap-x snap-mandatory overflow-x-auto rounded-xl shadow-lg shadow-slate-900/15 ring-1 ring-black/5"
         >
           {groups.map((group, index) => (
             <button
@@ -97,7 +103,7 @@ export const HotelGroupCarousel = ({ groups, onSelect }: HotelGroupCarouselProps
               type="button"
               onClick={() => onSelect(group.id)}
               aria-label={`Buka grup hotel ${group.name}`}
-              className="relative h-[150px] w-full shrink-0 snap-center overflow-hidden text-left"
+              className="relative h-[220px] w-full shrink-0 snap-center overflow-hidden text-left"
             >
               <Image
                 src={group.heroImage}
@@ -107,27 +113,29 @@ export const HotelGroupCarousel = ({ groups, onSelect }: HotelGroupCarouselProps
                 priority={index === 0}
                 className="object-cover"
               />
-              <span className="absolute inset-0 bg-gradient-to-t from-slate-900/92 via-slate-900/50 to-transparent" />
+              <span className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/55 to-transparent" />
 
-              <span className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3">
+              <span className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3.5">
                 <span className="min-w-0">
-                  <span className="inline-flex items-center gap-1 rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-bold text-white">
-                    <Building2 size={9} /> {group.hotels.length} hotel
+                  <span className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-0.5 text-[10px] font-bold text-white">
+                    <Building2 size={10} /> {group.hotels.length} hotel
                   </span>
-                  <span className="mt-1 block truncate text-[14px] font-bold leading-tight text-white">
+                  <span className="mt-1.5 block truncate text-[17px] font-bold leading-tight text-white">
                     {group.name}
                   </span>
-                  <span className="block truncate text-[10px] text-white/75">{group.tagline}</span>
+                  <span className="mt-0.5 block line-clamp-2 text-[11px] leading-snug text-white/80">
+                    {group.tagline}
+                  </span>
                 </span>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/95 text-primary">
-                  <ArrowRight size={15} />
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/95 text-primary shadow-sm">
+                  <ArrowRight size={17} />
                 </span>
               </span>
             </button>
           ))}
         </div>
 
-        <div className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-slate-900/40 px-1">
+        <div className="absolute right-2.5 top-2.5 flex items-center gap-0.5 rounded-full bg-slate-900/45 px-1 backdrop-blur-sm">
           {groups.map((group, index) => (
             <button
               key={`dot-${group.id}`}
