@@ -77,14 +77,14 @@ export const HotelGroupCarousel = ({ groups, onSelect }: HotelGroupCarouselProps
   return (
     <section
       aria-label="Rekomendasi Grup Hotel"
-      className="space-y-2 rounded-2xl border border-slate-100 bg-white p-2.5 shadow-card"
+      className="space-y-2 rounded-2xl border border-white/10 bg-[linear-gradient(135deg,#05071C_0%,#141A33_42%,#3A2216_76%,#7A3517_100%)] p-2.5 shadow-lg shadow-slate-900/25"
     >
       <div className="flex items-center justify-between px-0.5">
-        <h2 className="flex items-center gap-1.5 text-[14px] font-bold text-slate-900">
+        <h2 className="flex items-center gap-1.5 text-[14px] font-bold text-white">
           <span className="h-3.5 w-1 rounded-full bg-primary" aria-hidden="true" />
           Rekomendasi Grup Hotel
         </h2>
-        <span className="text-[10px] font-semibold text-slate-400">
+        <span className="text-[10px] font-semibold text-white/45">
           {groups.length} grup terdaftar
         </span>
       </div>
@@ -95,7 +95,7 @@ export const HotelGroupCarousel = ({ groups, onSelect }: HotelGroupCarouselProps
           onScroll={handleScroll}
           onPointerDown={() => setPaused(true)}
           onTouchStart={() => setPaused(true)}
-          className="no-scrollbar flex w-full snap-x snap-mandatory overflow-x-auto rounded-xl shadow-lg shadow-slate-900/15 ring-1 ring-black/5"
+          className="no-scrollbar flex w-full snap-x snap-mandatory overflow-x-auto rounded-xl shadow-lg shadow-black/40 ring-1 ring-white/10"
         >
           {groups.map((group, index) => (
             <button
