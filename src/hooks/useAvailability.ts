@@ -32,8 +32,8 @@ export const mapOffersToRooms = (offers: IAvailabilityOfferDto[], nights: number
       id: offer.room.id,
       name: offer.room.name,
       tagline: offer.room.description ?? '',
+      // Availability offers carry no size/bed metadata; omit instead of inventing.
       sizeSqm: 0,
-      bedType: '1 Queen Bed',
       maxOccupancy: offer.room.capacity,
       images: Array.isArray(offer.room.images) ? (offer.room.images as string[]) : [],
       facilities: [] satisfies ReturnType<typeof parseFacilities>,

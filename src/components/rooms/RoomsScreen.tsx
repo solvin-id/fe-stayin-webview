@@ -106,7 +106,7 @@ export const RoomsScreen = () => {
       <div className="sticky top-0 z-30">
         <Header
           title={hotel.name}
-          subtitle={`${hotel.city} · Hotel Bintang ${hotel.starRating}`}
+          subtitle={[hotel.city, hotel.starRating > 0 ? `Hotel Bintang ${hotel.starRating}` : null].filter(Boolean).join(' · ')}
           isAlfaTeve={isAlfaTeve}
           onBack={() => goToStep(1)}
           onShare={handleShare}
