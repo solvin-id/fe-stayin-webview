@@ -70,9 +70,9 @@ const buildCatalogRoom = (apiRoom: IRoomDto): Room => ({
   id: apiRoom.id,
   name: apiRoom.name,
   tagline: apiRoom.description ?? '',
-  // The tenant API carries neither room size nor bed type; leave them empty so
-  // the UI can omit the rows instead of inventing specs.
-  sizeSqm: 0,
+  // The property describes these on the room; 0 / undefined hides the row.
+  sizeSqm: apiRoom.sizeSqm ?? 0,
+  ...(apiRoom.bedType ? { bedType: apiRoom.bedType } : {}),
   maxOccupancy: apiRoom.capacity,
   images: Array.isArray(apiRoom.images) ? apiRoom.images : [],
   facilities: parseFacilities(
@@ -80,6 +80,8 @@ const buildCatalogRoom = (apiRoom: IRoomDto): Room => ({
   ),
   packages: [
     {
+      // No rate plan travels with the catalog, so the room is sold as its base
+      // rate; the availability mapper supplies the real package at checkout.
       id: `STD-${apiRoom.id}`,
       name: 'Harga Terbaik',
       mealPlan: 'ROOM_ONLY',
@@ -97,31 +99,42 @@ export const buildListing = (
   tenantId: string | null
 ): HotelListing => {
   const rooms = profile.rooms.filter((apiRoom) => apiRoom.active).map(buildCatalogRoom);
+  // Hero order: the property's own hero, then the first room photo, then the
+  // bundled placeholder — never a stock image the hotel did not choose.
   const heroImage =
+    profile.heroImageUrl ??
     rooms.find((room) => room.images.length > 0)?.images[0] ??
     '/placeholder-hotel.svg';
+  const fallbackMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    [profile.name, profile.address].filter(Boolean).join(' ')
+  )}`;
+  const profileFacilities = parseFacilities(profile.facilities ?? []);
+  // A property that has not tagged its facilities still shows the union of what
+  // its rooms offer, so the hotel card is never empty.
+  const facilities =
+    profileFacilities.length > 0
+      ? profileFacilities
+      : Array.from(
+          new Map(
+            rooms.flatMap((room) => room.facilities).map((facility) => [facility.id, facility])
+          ).values()
+        );
 
   const hotel: Hotel = {
     id: tenantId ?? 'hotel',
     name: profile.name,
     address: profile.address ?? '',
-    city: deriveCity(profile.address),
-    starRating: 0,
-    rating: 0,
-    reviewCount: 0,
-    checkInTime: profile.checkInTime ?? '14:00',
-    checkOutTime: profile.checkOutTime ?? '12:00',
-    distanceToCenter: '—',
+    city: profile.city ?? deriveCity(profile.address),
+    starRating: profile.starRating ?? 0,
+    rating: profile.rating ?? 0,
+    reviewCount: profile.reviewCount ?? 0,
+    checkInTime: profile.checkInTime || '14:00',
+    checkOutTime: profile.checkOutTime || '12:00',
+    distanceToCenter: profile.distanceToCenter ?? '—',
     phone: profile.phone ?? '—',
-    mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      [profile.name, profile.address].filter(Boolean).join(' ')
-    )}`,
+    mapsUrl: profile.mapsUrl ?? fallbackMapsUrl,
     heroImage,
-    facilities: Array.from(
-      new Map(
-        rooms.flatMap((room) => room.facilities).map((facility) => [facility.id, facility])
-      ).values()
-    ),
+    facilities,
   };
 
   return { hotel, rooms };

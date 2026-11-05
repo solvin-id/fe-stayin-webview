@@ -191,6 +191,10 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
               : state.guest.fullName,
             guestEmail: state.guest.email,
             guestPhone: state.guest.phone,
+            // What the guest picked at checkout, plus the package they bought.
+            specialRequests: state.guest.specialRequests,
+            notes: state.guest.notes,
+            ...(roomPackage.ratePlanId ? { ratePlanId: roomPackage.ratePlanId } : {}),
           },
           undefined,
           idempotencyKey,

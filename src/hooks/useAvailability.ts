@@ -16,27 +16,36 @@ const toNumber = (value: string): number => {
 /** Maps flat availability offers to the webview Room shape, one package per offer. */
 export const mapOffersToRooms = (offers: IAvailabilityOfferDto[], nights: number): Room[] =>
   offers.map((offer) => {
+    // The API resolves the property's rate plan (meal plan, breakfast, refund
+    // terms, strikethrough price); the webview renders it, never invents one.
+    const offerPackage = offer.package;
     const packages: RoomPackage[] = [
       {
-        id: `STD-${offer.room.id}`,
-        name: 'Harga Terbaik',
-        mealPlan: 'ROOM_ONLY',
-        includesBreakfast: false,
-        cancellationPolicy: 'FREE_CANCELLATION_BEFORE_48H',
+        id: offerPackage.ratePlanId ? `RP-${offerPackage.ratePlanId}` : `STD-${offer.room.id}`,
+        ...(offerPackage.ratePlanId ? { ratePlanId: offerPackage.ratePlanId } : {}),
+        name: offerPackage.name,
+        mealPlan: offerPackage.mealPlan,
+        includesBreakfast: offerPackage.includesBreakfast,
+        cancellationPolicy: offerPackage.cancellationPolicy,
         pricePerNight: nights > 0 ? Math.round(toNumber(offer.total) / nights) : 0,
+        ...(offerPackage.originalPrice
+          ? { originalPricePerNight: Math.round(toNumber(offerPackage.originalPrice)) }
+          : {}),
         unitsLeft: offer.stock,
       },
     ];
+    const facilities =
+      offer.room.facilities.length > 0 ? offer.room.facilities : offer.room.amenities;
 
     return {
       id: offer.room.id,
       name: offer.room.name,
       tagline: offer.room.description ?? '',
-      // Availability offers carry no size/bed metadata; omit instead of inventing.
-      sizeSqm: 0,
+      sizeSqm: offer.room.sizeSqm ?? 0,
+      ...(offer.room.bedType ? { bedType: offer.room.bedType } : {}),
       maxOccupancy: offer.room.capacity,
       images: Array.isArray(offer.room.images) ? (offer.room.images as string[]) : [],
-      facilities: [] satisfies ReturnType<typeof parseFacilities>,
+      facilities: parseFacilities(facilities),
       packages,
     } satisfies Room;
   });

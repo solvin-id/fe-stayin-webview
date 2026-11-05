@@ -10,6 +10,12 @@ export interface ICreateBookingInput {
   guestName: string;
   guestEmail?: string;
   guestPhone?: string;
+  /** Guest-stated preferences; the API stores them on the booking. */
+  specialRequests?: string[];
+  /** Free-text note for the front desk. */
+  notes?: string;
+  /** The rate plan/package the guest chose; must belong to `roomId`. */
+  ratePlanId?: string;
 }
 
 export const randomKey = (): string =>

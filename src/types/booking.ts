@@ -1,9 +1,3 @@
-export type BedType =
-  | '2 Twin Beds'
-  | '1 Queen Bed'
-  | '1 King Bed'
-  | '1 King Bed + Sofa Bed';
-
 export type CancellationPolicy = 'NON_REFUNDABLE' | 'FREE_CANCELLATION_BEFORE_48H';
 
 export type MealPlan = 'ROOM_ONLY' | 'BREAKFAST';
@@ -46,6 +40,8 @@ export interface Facility {
 
 export interface RoomPackage {
   id: string;
+  /** Rate plan row behind this package; absent for the synthetic best-rate plan. */
+  ratePlanId?: string;
   name: string;
   mealPlan: MealPlan;
   includesBreakfast: boolean;
@@ -60,8 +56,8 @@ export interface Room {
   name: string;
   tagline: string;
   sizeSqm: number;
-  /** Absent when the source catalog does not describe the bed. */
-  bedType?: BedType;
+  /** Free text from the property ("1 King Bed"); absent when not described. */
+  bedType?: string;
   maxOccupancy: number;
   images: string[];
   facilities: Facility[];

@@ -12,6 +12,7 @@ import { StickyActionBar } from '@/components/ui/StickyActionBar';
 import { useBookingStore } from '@/stores/useBookingStore';
 import { useCatalogStore, findRoomInListings, findPackageInRoom } from '@/stores/useCatalogStore';
 import { useHostContext } from '@/hooks/useHostContext';
+import { useQuote } from '@/hooks/useQuote';
 import { diffInNights } from '@/lib/date';
 import { formatCurrency, formatDateWithDay } from '@/lib/formatters';
 import { buildPriceSummary } from '@/lib/pricing';
@@ -40,6 +41,18 @@ export const CheckoutSection = () => {
   const pricing = useMemo(
     () => (roomPackage ? buildPriceSummary(roomPackage.pricePerNight, nights, search.rooms) : null),
     [roomPackage, nights, search.rooms]
+  );
+  // The property's own tax/service policy and voucher decide the final amount;
+  // the local estimate above only fills the card until the quote arrives.
+  const { quote } = useQuote(
+    room && search.checkIn && search.checkOut
+      ? {
+          roomId: room.id,
+          checkIn: search.checkIn,
+          checkOut: search.checkOut,
+          guests: search.guests,
+        }
+      : null
   );
 
   if (!room || !roomPackage || !pricing) {
@@ -108,7 +121,7 @@ export const CheckoutSection = () => {
                 {roomPackage.name}
               </p>
               <p className="truncate text-[11px] text-slate-500">
-                {room.name} · {room.bedType}
+                {[room.name, room.bedType].filter(Boolean).join(' · ')}
               </p>
             </div>
             <ChevronRight size={16} className="shrink-0 text-slate-300" />
@@ -120,7 +133,7 @@ export const CheckoutSection = () => {
           selected={guest.specialRequests}
           onToggle={toggleSpecialRequest}
         />
-        <PriceBreakdown pricing={pricing} />
+        <PriceBreakdown pricing={pricing} quote={quote} />
       </div>
 
       <StickyActionBar>
@@ -128,7 +141,7 @@ export const CheckoutSection = () => {
           <div className="min-w-0 flex-1">
             <p className="text-[10px] text-slate-500">Total Pembayaran</p>
             <p className="truncate text-[17px] font-bold text-primary">
-              {formatCurrency(pricing.total)}
+              {formatCurrency(quote ? Number(quote.total) : pricing.total)}
             </p>
           </div>
           <Button

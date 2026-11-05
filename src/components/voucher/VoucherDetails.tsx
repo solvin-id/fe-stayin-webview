@@ -21,11 +21,16 @@ export const VoucherDetails = ({ booking }: { booking: Booking }) => {
             <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
               {booking.hotel.address}, {booking.hotel.city}
             </p>
-            <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600">
-              <Star size={11} className="fill-amber-400 text-amber-400" />
-              {formatDecimal(booking.hotel.rating)} · {formatReviewCount(booking.hotel.reviewCount)}{' '}
-              ulasan
-            </p>
+            {/* A property without an imported rating shows no rating line at all. */}
+            {booking.hotel.rating > 0 ? (
+              <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600">
+                <Star size={11} className="fill-amber-400 text-amber-400" />
+                {formatDecimal(booking.hotel.rating)}
+                {booking.hotel.reviewCount > 0
+                  ? ` · ${formatReviewCount(booking.hotel.reviewCount)} ulasan`
+                  : ''}
+              </p>
+            ) : null}
           </div>
         </div>
         <a

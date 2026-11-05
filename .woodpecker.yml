@@ -32,6 +32,8 @@ steps:
       - export NEXT_PUBLIC_NGINEP_ENABLED=true
       - export NEXT_PUBLIC_NGINEP_API_URL=https://stayin-api.solvin.id
       - export NEXT_PUBLIC_NGINEP_TENANT=grand-dian
+      # Host next/image is allowed to optimize property photos from.
+      - export NEXT_PUBLIC_MEDIA_HOSTNAME=stayin-api.solvin.id
       - npm run build
       - rm -rf .stayin-stage && mkdir -p .stayin-stage/web
       - cp -r .next/standalone/. .stayin-stage/web/

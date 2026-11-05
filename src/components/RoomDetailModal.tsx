@@ -69,12 +69,16 @@ export const RoomDetailModal = ({
       <RoomImageCarousel images={room.images} alt={room.name} className="rounded-xl" />
 
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] font-medium text-slate-600">
-        <span className="inline-flex items-center gap-1">
-          <Maximize2 size={13} className="text-slate-400" /> {room.sizeSqm} m²
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <BedDouble size={13} className="text-slate-400" /> {room.bedType}
-        </span>
+        {room.sizeSqm > 0 ? (
+          <span className="inline-flex items-center gap-1">
+            <Maximize2 size={13} className="text-slate-400" /> {room.sizeSqm} m²
+          </span>
+        ) : null}
+        {room.bedType ? (
+          <span className="inline-flex items-center gap-1">
+            <BedDouble size={13} className="text-slate-400" /> {room.bedType}
+          </span>
+        ) : null}
         <span className="inline-flex items-center gap-1">
           <Users size={13} className="text-slate-400" /> {room.maxOccupancy} tamu
         </span>
