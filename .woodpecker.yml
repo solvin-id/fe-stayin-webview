@@ -14,6 +14,7 @@ steps:
     image: bash
     commands:
       - export PATH="/home/diama/.nvm/versions/node/v24.22.1/bin:/usr/local/bin:$PATH"
+      - export npm_config_cache=/var/lib/woodpecker/npm-cache
       - npm ci --no-audit --no-fund
       - npx tsc --noEmit
       - npm test
@@ -25,6 +26,7 @@ steps:
       - export NODE_OPTIONS="--max-old-space-size=1536"
       # API base is resolved at runtime by the BFF (NGINEP_API_URL in the env file),
       # so the build needs no public API URL.
+      - export npm_config_cache=/var/lib/woodpecker/npm-cache
       - npm run build
       - rm -rf .stayin-stage && mkdir -p .stayin-stage/web
       - cp -r .next/standalone/. .stayin-stage/web/
