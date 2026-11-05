@@ -113,7 +113,7 @@ export const RoomDetailModal = ({
       </div>
 
       <p className="py-3 text-[11px] leading-relaxed text-slate-500">
-        Harga belum termasuk pajak 10%. Promo Alfa Teve Rp 50.000 diterapkan pada halaman
+        Harga belum termasuk pajak dan biaya layanan; rinciannya dihitung pada halaman
         pemesanan.
       </p>
     </BottomSheet>

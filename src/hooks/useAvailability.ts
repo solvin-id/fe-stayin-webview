@@ -5,7 +5,7 @@ import { isNginepEnabled } from '@/lib/api/config';
 import { searchAvailability } from '@/services/availability.service';
 import type { IAvailabilityOfferDto } from '@/types/api';
 import { diffInNights } from '@/lib/date';
-import { parseFacilities } from '@/stores/useCatalogStore';
+import { parseFacilities, useCatalogStore } from '@/stores/useCatalogStore';
 import type { Room, RoomPackage, SearchQuery } from '@/types/booking';
 
 const toNumber = (value: string): number => {
@@ -93,7 +93,9 @@ export const useAvailability = (search: SearchQuery): UseAvailabilityResult => {
           return;
         }
         const nights = diffInNights(search.checkIn, search.checkOut);
-        setRooms(mapOffersToRooms(offers, nights));
+        const mapped = mapOffersToRooms(offers, nights);
+        setRooms(mapped);
+        useCatalogStore.getState().applyAvailability(mapped);
         setStatus('ready');
       })
       .catch(() => {

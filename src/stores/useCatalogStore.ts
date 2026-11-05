@@ -167,6 +167,12 @@ interface CatalogStore {
   status: CatalogStatus;
   error: string | null;
   load: (tenantId: string | null) => Promise<void>;
+  /**
+   * Replaces the rooms with the live availability result for the searched stay.
+   * Checkout resolves the chosen package from this store, so without it a room
+   * picked from the offer list would be re-resolved to its static base rate.
+   */
+  applyAvailability: (rooms: Room[]) => void;
   clear: () => void;
 }
 
@@ -196,6 +202,23 @@ export const useCatalogStore = create<CatalogStore>((set) => ({
       });
     }
   },
+
+  applyAvailability: (rooms) =>
+    set((state) => {
+      if (rooms.length === 0) {
+        return state;
+      }
+      const byId = new Map(rooms.map((room) => [room.id, room]));
+      return {
+        ...state,
+        listings: state.listings.map((listing) => ({
+          ...listing,
+          // Only offers for rooms this property already knows about; an unknown id
+          // would invent a room the catalog never loaded.
+          rooms: listing.rooms.map((room) => byId.get(room.id) ?? room),
+        })),
+      };
+    }),
 
   clear: () => set({ listings: [], status: 'idle', error: null }),
 }));

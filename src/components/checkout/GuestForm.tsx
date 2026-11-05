@@ -1,6 +1,6 @@
 'use client';
 
-import { Mail, Phone, User, UserRound } from 'lucide-react';
+import { Mail, MessageSquare, Phone, User, UserRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { GuestDetails } from '@/types/booking';
 import type { GuestFormErrors } from '@/lib/validation';
@@ -130,6 +130,23 @@ export const GuestForm = ({ guest, errors, onChange }: GuestFormProps) => (
           </label>
         ) : null}
       </div>
+
+      <label className="block">
+        <span className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-slate-600">
+          <MessageSquare size={12} /> Catatan untuk Hotel (opsional)
+        </span>
+        <textarea
+          rows={2}
+          maxLength={500}
+          value={guest.notes}
+          onChange={(event) => onChange({ notes: event.target.value })}
+          placeholder="cth: tiba pukul 22.00, mohon kamar yang tenang"
+          className={inputClass(false)}
+        />
+        <span className="mt-1 block text-right text-[10px] text-slate-400">
+          {guest.notes.length}/500
+        </span>
+      </label>
     </div>
   </section>
 );
