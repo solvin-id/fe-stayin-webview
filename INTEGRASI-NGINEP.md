@@ -397,3 +397,26 @@ Owner must:
 - Run existing tests only (`npm test`) — do NOT modify tests
 - Verify: `curl -H 'x-nginep-tenant: grand-dian' http://localhost:9120/api/public/hotel-profile` returns JSON
 
+
+---
+
+## Deployment (homelab, baremetal — no Docker)
+
+| Item | Value |
+| --- | --- |
+| API host | `stayin-api.solvin.id` → `127.0.0.1:9130` |
+| WebView host | `stayin.solvin.id` → `127.0.0.1:3140` |
+| API unit | `stayin-api.service` (user `stayin`, `/opt/stayin-api`, `dist/main.js`) |
+| WebView unit | `stayin-webview.service` (Next standalone, `/opt/stayin-webview/server.js`) |
+| Node runtime | `/opt/stayin-node/bin/node` (self-contained copy, v24.22.1) |
+| Env files | `/etc/stayin/stayin-api.env` (Postgres + Redis + JWT), `/etc/stayin/stayin-webview.env` (`NGINEP_API_URL=http://127.0.0.1:9130`) |
+| Database | PostgreSQL 17 database `stayin`, app role `stayin`, migration role `stayin_migrator` (BYPASSRLS) |
+| Redis | local instance, DB index 3 (`REDIS_URL=redis://127.0.0.1:6379/3`), 60s hotel-profile cache; no-ops when unavailable |
+| CI | Woodpecker `solvin-id/fs-stayin-engine` (main) + `solvin-id/fe-stayin-webview` (dev), local backend, deploy via `/usr/local/bin/stayin*-ci-deploy` |
+
+CI flow: clone → build (blocking) → tests (non-blocking while the upstream suite is red) → `prisma migrate deploy`
++ `deploy/stayin-db-grants.sql` → stage `pnpm deploy --prod` output → restart unit → health check on the port.
+
+DNS cutover needs a `cloudflared` connector inside the account that owns `solvin.id` (a tunnel CNAME
+must live in the tunnel's own account): install with `/usr/local/bin/stayin-tunnel-install <token>`
+and apply `/etc/stayin/tunnel-ingress.yml` as the tunnel's remote configuration.
