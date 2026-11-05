@@ -1,11 +1,19 @@
 /**
- * Nginep integration configuration. When `NEXT_PUBLIC_NGINEP_API_URL` is unset
- * the webview runs in mock mode against local demo data.
+ * Nginep integration configuration.
+ *
+ * The browser only ever calls the same-origin BFF (`/api/nginep/*`), so the
+ * public URL is informational; mode selection uses an explicit flag that CI
+ * sets at build time. `NEXT_PUBLIC_NGINEP_ENABLED=false` forces mock mode, and
+ * an explicit URL keeps older builds working.
  */
 export const NGINEP_API_URL =
   process.env.NEXT_PUBLIC_NGINEP_API_URL?.replace(/\/+$/, '') ?? '';
 
-export const isNginepEnabled = (): boolean => NGINEP_API_URL.length > 0;
+const ENABLED_FLAG = process.env.NEXT_PUBLIC_NGINEP_ENABLED;
+
+export const isNginepEnabled = (): boolean =>
+  ENABLED_FLAG === 'true' ||
+  (ENABLED_FLAG !== 'false' && NGINEP_API_URL.length > 0);
 
 export const TENANT_HEADER = 'x-nginep-tenant';
 

@@ -1,4 +1,4 @@
-import { BFF_BASE, isNginepEnabled, TENANT_HEADER } from './config';
+import { BFF_BASE, DEFAULT_TENANT, isNginepEnabled, TENANT_HEADER } from './config';
 import { NginepApiError } from './errors';
 
 export interface INnginepRequestOptions {
@@ -19,7 +19,8 @@ const normalizeTenant = (tenant?: string): string | null => {
       return fromStorage.trim();
     }
   }
-  return null;
+  // Build-time default so a plain visit (no host params) still resolves a tenant.
+  return DEFAULT_TENANT.trim().length > 0 ? DEFAULT_TENANT.trim() : null;
 };
 
 /**
