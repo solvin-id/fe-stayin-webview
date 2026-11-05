@@ -70,8 +70,9 @@ const buildCatalogRoom = (apiRoom: IRoomDto): Room => ({
   id: apiRoom.id,
   name: apiRoom.name,
   tagline: apiRoom.description ?? '',
+  // The tenant API carries neither room size nor bed type; leave them empty so
+  // the UI can omit the rows instead of inventing specs.
   sizeSqm: 0,
-  bedType: '1 Queen Bed',
   maxOccupancy: apiRoom.capacity,
   images: Array.isArray(apiRoom.images) ? apiRoom.images : [],
   facilities: parseFacilities(

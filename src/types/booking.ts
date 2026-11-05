@@ -60,7 +60,8 @@ export interface Room {
   name: string;
   tagline: string;
   sizeSqm: number;
-  bedType: BedType;
+  /** Absent when the source catalog does not describe the bed. */
+  bedType?: BedType;
   maxOccupancy: number;
   images: string[];
   facilities: Facility[];

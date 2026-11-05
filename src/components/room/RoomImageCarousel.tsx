@@ -58,7 +58,11 @@ export const RoomImageCarousel = ({ images, alt, className }: RoomImageCarouselP
           ))}
         </div>
         <span className="inline-flex items-center gap-1 rounded-md bg-slate-900/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-          <Images size={10} /> {activeIndex + 1}/{images.length}
+          {images.length > 1 ? (
+            <>
+              <Images size={10} /> {activeIndex + 1}/{images.length}
+            </>
+          ) : null}
         </span>
       </div>
     </div>
