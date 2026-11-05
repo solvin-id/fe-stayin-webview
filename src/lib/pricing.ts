@@ -1,4 +1,4 @@
-import type { PriceSummary } from '@/types/booking';
+import type { HotelListing, PriceSummary } from '@/types/booking';
 
 export const TAX_RATE = 0.1;
 
@@ -26,4 +26,12 @@ export const buildPriceSummary = (
     discount,
     total: roomTotal + tax - discount,
   };
+};
+
+/** Lowest nightly rate across a listing's packages (API and mock listings alike). */
+export const lowestRateOf = (listing: HotelListing | undefined): number => {
+  const rates = (listing?.rooms ?? []).flatMap((room) =>
+    room.packages.map((roomPackage) => roomPackage.pricePerNight)
+  );
+  return rates.length > 0 ? Math.min(...rates) : 0;
 };

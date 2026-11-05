@@ -1,7 +1,8 @@
 import { SearchX } from 'lucide-react';
 import { HotelCard } from '@/components/hotels/HotelCard';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { getLowestNightlyRate } from '@/data/hotels';
+import { lowestRateOf } from '@/lib/pricing';
+
 import type { HotelListing } from '@/types/booking';
 
 interface HotelListProps {
@@ -63,7 +64,7 @@ export const HotelList = ({ listings, onSelectHotel, onReset }: HotelListProps) 
         <HotelCard
           key={listing.hotel.id}
           listing={listing}
-          lowestRate={getLowestNightlyRate(listing.hotel.id)}
+          lowestRate={lowestRateOf(listing)}
           onOpen={() => onSelectHotel(listing.hotel.id)}
         />
       ))}

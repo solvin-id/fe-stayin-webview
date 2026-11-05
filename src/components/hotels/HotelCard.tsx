@@ -32,9 +32,11 @@ export const HotelCard = ({ listing, lowestRate, onOpen }: HotelCardProps) => {
           sizes="480px"
           className="object-cover"
         />
-        <span className="absolute left-2 top-2 rounded-md bg-slate-900/70 px-1.5 py-0.5 text-[10px] font-bold text-white">
-          Hotel Bintang {hotel.starRating}
-        </span>
+        {hotel.starRating > 0 ? (
+          <span className="absolute left-2 top-2 rounded-md bg-slate-900/70 px-1.5 py-0.5 text-[10px] font-bold text-white">
+            Hotel Bintang {hotel.starRating}
+          </span>
+        ) : null}
       </button>
 
       <div className="px-3.5 pb-3 pt-3">
@@ -48,14 +50,19 @@ export const HotelCard = ({ listing, lowestRate, onOpen }: HotelCardProps) => {
               </span>
             </p>
           </div>
-          <span className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold text-amber-700">
-            <Star size={11} className="fill-amber-400 text-amber-400" />
-            {formatDecimal(hotel.rating)}
-          </span>
+          {hotel.rating > 0 ? (
+            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold text-amber-700">
+              <Star size={11} className="fill-amber-400 text-amber-400" />
+              {formatDecimal(hotel.rating)}
+            </span>
+          ) : null}
         </div>
 
         <p className="mt-1 text-[10px] text-slate-400">
-          {formatReviewCount(hotel.reviewCount)} ulasan · {hotel.distanceToCenter} ·{' '}
+          {hotel.reviewCount > 0 ? `${formatReviewCount(hotel.reviewCount)} ulasan · ` : ''}
+          {hotel.distanceToCenter && hotel.distanceToCenter !== '—'
+            ? `${hotel.distanceToCenter} · `
+            : ''}
           {rooms.length} tipe kamar
         </p>
 

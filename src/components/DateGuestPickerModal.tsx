@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/Button';
 import { CalendarGrid } from '@/components/search/CalendarGrid';
 import { SelectedDateSummary } from '@/components/search/SelectedDateSummary';
 import { GuestCounter } from '@/components/search/GuestCounter';
-import { getLowestNightlyRate } from '@/data/hotels';
+import { lowestRateOf } from '@/lib/pricing';
+import { useCatalogStore } from '@/stores/useCatalogStore';
 import { addMonths, diffInNights, monthKey, monthLabel, resolveCalendarMonth, toIsoDate } from '@/lib/date';
 import { formatNights } from '@/lib/formatters';
 import type { SearchQuery } from '@/types/booking';
@@ -50,7 +51,8 @@ export const DateGuestPickerModal = ({
     [checkIn, checkOut]
   );
 
-  const nightlyRate = getLowestNightlyRate();
+  const listings = useCatalogStore((state) => state.listings);
+  const nightlyRate = lowestRateOf(listings[0]);
   const canGoPrev =
     monthKey(visibleMonth.year, visibleMonth.month) > minIso.slice(0, 7);
 
