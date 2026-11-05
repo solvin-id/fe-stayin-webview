@@ -417,6 +417,15 @@ Owner must:
 CI flow: clone → build (blocking) → tests (non-blocking while the upstream suite is red) → `prisma migrate deploy`
 + `deploy/stayin-db-grants.sql` → stage `pnpm deploy --prod` output → restart unit → health check on the port.
 
-DNS cutover needs a `cloudflared` connector inside the account that owns `solvin.id` (a tunnel CNAME
-must live in the tunnel's own account): install with `/usr/local/bin/stayin-tunnel-install <token>`
-and apply `/etc/stayin/tunnel-ingress.yml` as the tunnel's remote configuration.
+### Live public endpoints
+
+| URL | Serves |
+| --- | --- |
+| https://stayin.solvin.id | webview (`:3140`) — client calls `/api/nginep/*` on the same origin |
+| https://stayin-api.solvin.id | API (`:9130`) — direct access for diagnostics; the webview BFF uses loopback |
+
+Both hostnames are CNAMEs to the existing homelab tunnel (`eb1d7b85-…cfargotunnel.com`) because
+`diama.dev` and `solvin.id` live in the same Cloudflare account, so no extra connector is needed.
+Ingress entries are kept in `/etc/stayin/tunnel-ingress.yml` for reference.
+
+`seed-demo-data.mjs` generates a 365-day inventory window so far-future searches return offers.
