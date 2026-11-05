@@ -23,9 +23,26 @@ Data mock langsung tampil tanpa konfigurasi tambahan. Tidak ada file `.env` yang
 | Layanan sewa & makanan | `src/data/serviceCatalog.ts` | `RENT_VEHICLES`, `FOOD_MENUS`, `PROMO_BANNERS` |
 | Helper query | `src/data/hotels.ts`, `src/data/hotelGroups.ts` | `getHotelById`, `getRoomsByHotel`, `getLowestNightlyRate`, `getHotelGroups`, … |
 
+## Status integrasi (per November 2026)
+
+Lapisan API **sudah ada** dan aktif bila `NEXT_PUBLIC_NGINEP_ENABLED=true`:
+klien `src/lib/api/client.ts` memanggil BFF `/api/nginep/*`, mapper ada di
+`src/services/*` (`hotel.service.ts`, `availability.service.ts`,
+`quote.service.ts`, `booking.service.ts`). Endpoint tenant yang dipakai:
+
+- `GET /storefront/hotel-profile` — profil properti (alamat, bintang, rating, jam, hero/gallery, fasilitas) + kamar.
+- `POST /availability` — penawaran kamar; tiap offer membawa `package` (meal plan, sarapan, kebijakan pembatalan, harga coret).
+- `POST /storefront/quote` — rincian biaya checkout dari server (subtotal, pajak, layanan, diskon, total).
+- `POST /booking` — reservasi; menerima `specialRequests`, `notes`, `ratePlanId`.
+- `GET /storefront/bookings/:code` — status reservasi.
+
+Foto properti/kamar disajikan `GET {MEDIA_BASE}/api/media/<key>` (tanpa header tenant;
+tenant diambil dari key). Bila integrasi dimatikan, UI kembali ke data mock.
+
 ## Titik integrasi yang disarankan
 
-Saat ini **belum ada lapisan API** (tidak ada `fetch`/`axios` di `src/`). Urutan penggantian yang paling aman:
+Urutan penggantian yang dulu disarankan untuk data mock (dipertahankan sebagai
+referensi historis):
 
 1. **Katalog hotel** — ganti `HOTELS` (tipe `HotelListing[]`, lihat `src/types/booking.ts`) dengan respons `GET /hotels`. Pertahankan bentuk tipe yang sama agar komponen tidak perlu diubah.
 2. **Daftar kamar** — `GET /hotels/:id/rooms` mengisi `HotelListing.rooms`.
