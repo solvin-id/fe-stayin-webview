@@ -24,6 +24,20 @@ export const RoomImageCarousel = ({ images, alt, className }: RoomImageCarouselP
     setActiveIndex(Math.min(images.length - 1, Math.max(0, nextIndex)));
   };
 
+  if (images.length === 0) {
+    return (
+      <div className={cn('relative h-44 overflow-hidden bg-slate-100', className)}>
+        <Image
+          src="/placeholder-hotel.svg"
+          alt={alt}
+          fill
+          sizes="480px"
+          className="object-cover"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={cn('relative overflow-hidden bg-slate-100', className)}>
       <div
