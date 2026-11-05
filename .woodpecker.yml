@@ -27,6 +27,11 @@ steps:
       # API base is resolved at runtime by the BFF (NGINEP_API_URL in the env file),
       # so the build needs no public API URL.
       - export npm_config_cache=/home/woodpecker/caches/npm-cache
+      # The browser talks to the same-origin BFF; these build-time flags select
+      # API mode and the fallback tenant (see src/lib/api/config.ts).
+      - export NEXT_PUBLIC_NGINEP_ENABLED=true
+      - export NEXT_PUBLIC_NGINEP_API_URL=https://stayin-api.solvin.id
+      - export NEXT_PUBLIC_NGINEP_TENANT=grand-dian
       - npm run build
       - rm -rf .stayin-stage && mkdir -p .stayin-stage/web
       - cp -r .next/standalone/. .stayin-stage/web/
