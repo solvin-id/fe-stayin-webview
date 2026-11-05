@@ -1,0 +1,39 @@
+skip_clone: true
+
+labels:
+  backend: local
+
+steps:
+  - name: clone
+    image: bash
+    commands:
+      - git clone -b $CI_COMMIT_BRANCH git@github.com:solvin-id/fe-stayin-webview.git .
+      - git checkout $CI_COMMIT_SHA
+
+  - name: verify
+    image: bash
+    commands:
+      - export PATH="/home/diama/.nvm/versions/node/v24.22.1/bin:/home/diama/.local/bin:$PATH"
+      - npm ci --no-audit --no-fund
+      - npx tsc --noEmit
+      - npm test
+
+  - name: deploy
+    image: bash
+    commands:
+      - export PATH="/home/diama/.nvm/versions/node/v24.22.1/bin:/home/diama/.local/bin:$PATH"
+      - export NODE_OPTIONS="--max-old-space-size=1536"
+      # API base is resolved at runtime by the BFF (NGINEP_API_URL in the env file),
+      # so the build needs no public API URL.
+      - npm run build
+      - rm -rf /tmp/stayin-web-stage && mkdir -p /tmp/stayin-web-stage/web
+      - cp -r .next/standalone/. /tmp/stayin-web-stage/web/
+      - mkdir -p /tmp/stayin-web-stage/web/.next
+      - cp -r .next/static /tmp/stayin-web-stage/web/.next/static
+      - cp -r public /tmp/stayin-web-stage/web/public
+      - chmod -R a+rX /tmp/stayin-web-stage
+      - sudo -n /usr/local/bin/stayin-webview-ci-deploy /tmp/stayin-web-stage
+
+when:
+  - event: [push, manual]
+    branch: [dev, main]

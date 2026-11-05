@@ -1,0 +1,37 @@
+#!/bin/bash
+# stayin-webview-ci-deploy <stage-root>
+# Installs the staged Stayin webview standalone build into /opt/stayin-webview and
+# restarts the systemd unit. Runs as root via sudoers (see /etc/sudoers.d/stayin-ci).
+#
+# <stage-root>/web must contain the Next standalone output (server.js, .next/,
+# node_modules/) with static/ and public/ already merged in.
+set -euo pipefail
+
+STAGE="${1:?usage: stayin-webview-ci-deploy <stage-root>}"
+TARGET=/opt/stayin-webview
+ENV_FILE=/etc/stayin/stayin-webview.env
+UNIT=stayin-webview.service
+
+[ -f "$STAGE/web/server.js" ] || { echo "not a stayin webview stage: $STAGE" >&2; exit 1; }
+[ -f "$ENV_FILE" ] || { echo "missing $ENV_FILE" >&2; exit 1; }
+
+rsync -a --delete \
+  --exclude='.git' \
+  "$STAGE/web/" "$TARGET/"
+
+chown -R stayin:stayin "$TARGET"
+chmod -R a+rX "$TARGET"
+
+systemctl restart "$UNIT"
+
+for _ in $(seq 1 20); do
+  sleep 1
+  if curl -fsS -m 2 -o /dev/null "http://127.0.0.1:3140/"; then
+    echo "stayin-webview healthy after restart"
+    exit 0
+  fi
+done
+
+echo "stayin-webview did not become healthy; recent journal:" >&2
+journalctl -u "$UNIT" -n 30 --no-pager >&2
+exit 1

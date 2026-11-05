@@ -11,12 +11,14 @@ import { getPackageById, getRoomById } from '@/data/hotels';
 import { diffInNights } from '@/lib/date';
 import { formatCurrency } from '@/lib/formatters';
 import { buildPriceSummary } from '@/lib/pricing';
-import type { Hotel, SearchQuery } from '@/types/booking';
+import type { Hotel, Room, SearchQuery } from '@/types/booking';
 
 interface RoomDetailModalProps {
   open: boolean;
   roomId: string | null;
   packageId: string | null;
+  /** Room resolved by the caller (API mode or mock); falls back to mock lookup when absent. */
+  room?: Room;
   hotel: Hotel;
   search: SearchQuery;
   onSelectPackage: (packageId: string) => void;
@@ -28,13 +30,14 @@ export const RoomDetailModal = ({
   open,
   roomId,
   packageId,
+  room: roomProp,
   hotel,
   search,
   onSelectPackage,
   onClose,
   onContinue,
 }: RoomDetailModalProps) => {
-  const room = getRoomById(roomId);
+  const room = roomProp ?? getRoomById(roomId);
   if (!room) {
     return null;
   }

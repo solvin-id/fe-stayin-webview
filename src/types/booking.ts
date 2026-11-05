@@ -170,6 +170,12 @@ export interface Booking {
   pricing: PriceSummary;
   method: PaymentMethodId;
   createdAt: string;
+  /** Server booking codes (one per room) when created through the tenant API. */
+  bookingCodes?: string[];
+  /** Server booking ids (one per room) when created through the tenant API. */
+  bookingIds?: string[];
+  /** Server booking status, e.g. PENDING_PAYMENT / CONFIRMED. */
+  serverStatus?: string;
 }
 
 export interface ToastMessage {

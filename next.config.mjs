@@ -2,6 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Baremetal deploy: the CI stages .next/standalone + static + public.
+  output: 'standalone',
   images: {
     remotePatterns: [
       {

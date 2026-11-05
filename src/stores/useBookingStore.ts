@@ -1,8 +1,17 @@
 'use client';
 
 import { create } from 'zustand';
-import { getHotelById, getPackageById, getRoomById } from '@/data/hotels';
 import { DEFAULT_SEARCH, GUEST_PROFILE } from '@/data/mockData';
+import { isNginepEnabled } from '@/lib/api/config';
+import { NginepApiError } from '@/lib/api/errors';
+import { createBooking, randomKey } from '@/services/booking.service';
+import { getBookingStatus } from '@/services/payment.service';
+import {
+  findPackageInRoom,
+  findRoomInListings,
+  getListingById,
+  useCatalogStore,
+} from '@/stores/useCatalogStore';
 import { diffInNights } from '@/lib/date';
 import { PAYMENT_WINDOW_SECONDS, buildPriceSummary } from '@/lib/pricing';
 import type {
@@ -47,6 +56,10 @@ interface BookingStore {
   booking: Booking | null;
   toast: ToastMessage | null;
   activeGroupId: string | null;
+  /** True while confirmPayment's status-polling loop is running. */
+  pollingActive: boolean;
+  /** Stable per-submission idempotency key, reused across retries of one intent. */
+  bookingIdempotencyKey: string | null;
   openGroup: (groupId: string) => void;
   closeGroup: () => void;
   selectHotel: (hotelId: string) => void;
@@ -61,8 +74,8 @@ interface BookingStore {
   toggleSpecialRequest: (id: SpecialRequestId) => void;
   selectPackage: (packageId: string) => void;
   setPaymentMethod: (method: PaymentMethodId) => void;
-  startPayment: () => void;
-  confirmPayment: () => void;
+  startPayment: () => Promise<void>;
+  confirmPayment: () => Promise<void>;
   expirePayment: () => void;
   restartAfterExpiry: () => void;
   startNewBooking: () => void;
@@ -83,6 +96,8 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
   booking: null,
   toast: null,
   activeGroupId: null,
+  pollingActive: false,
+  bookingIdempotencyKey: null,
 
   openGroup: (activeGroupId) => set({ activeGroupId }),
 
@@ -135,17 +150,102 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
   setPaymentMethod: (method) =>
     set((state) => ({ payment: { ...state.payment, method } })),
 
-  startPayment: () => {
+  startPayment: async () => {
     const state = get();
-    const hotel = getHotelById(state.selectedHotelId);
-    const room = getRoomById(state.selectedRoomId);
-    const roomPackage = getPackageById(room, state.selectedPackageId);
+    const listings = useCatalogStore.getState().listings;
+    const listing = getListingById(listings, state.selectedHotelId);
+    const room = findRoomInListings(listings, state.selectedRoomId);
+    const roomPackage = findPackageInRoom(room, state.selectedPackageId);
 
-    if (!hotel || !room || !roomPackage) {
+    if (!listing || !room || !roomPackage) {
+      // Stale/mismatched selection (e.g. hotel id not in current catalog): surface
+      // it instead of silently booking a different property.
+      set({
+        toast: {
+          id: Date.now(),
+          message: 'Pilihan hotel atau kamar tidak valid. Muat ulang daftar hotel.',
+          tone: 'error',
+        },
+      });
+      return;
+    }
+    const hotel = listing.hotel;
+
+    const nights = diffInNights(state.search.checkIn, state.search.checkOut);
+
+    if (isNginepEnabled()) {
+      set({ step: 4 });
+      try {
+        // Stable key per submission intent: a retry after a lost response replays
+        // the same booking instead of double-booking (server resolveReplay).
+        const idempotencyKey = get().bookingIdempotencyKey ?? randomKey();
+        set({ bookingIdempotencyKey: idempotencyKey });
+        const result = await createBooking(
+          {
+            checkIn: state.search.checkIn,
+            checkOut: state.search.checkOut,
+            guests: state.search.guests,
+            roomId: room.id,
+            guestName: state.guest.bookingForOther
+              ? state.guest.guestName
+              : state.guest.fullName,
+            guestEmail: state.guest.email,
+            guestPhone: state.guest.phone,
+          },
+          undefined,
+          idempotencyKey,
+        );
+        if (!result) {
+          return;
+        }
+        const current = get();
+        const record = result.booking;
+        set({
+          step: 5,
+          booking: {
+            reference: record.code,
+            hotel,
+            roomId: room.id,
+            roomName: room.name,
+            packageId: roomPackage.id,
+            packageName: roomPackage.name,
+            includesBreakfast: roomPackage.includesBreakfast,
+            search: { ...state.search },
+            nights,
+            guest: { ...state.guest },
+            pricing: {
+              pricePerNight: roomPackage.pricePerNight,
+              nights,
+              rooms: 1, // API books exactly one room per booking.
+              roomTotal: Number(record.subtotal),
+              tax: Number(record.taxAmount),
+              discount: Number(record.discountAmount),
+              total: Number(record.total),
+            },
+            method: current.payment.method,
+            createdAt: new Date().toISOString(),
+            bookingCodes: [record.code],
+            bookingIds: [record.id],
+            serverStatus: record.status,
+          },
+          payment: {
+            ...current.payment,
+            status: 'PENDING',
+            expiresAt: Date.now() + PAYMENT_WINDOW_SECONDS * 1000,
+            paidAt: null,
+          },
+        });
+      } catch (error) {
+        const message =
+          error instanceof NginepApiError
+            ? error.message
+            : 'Gagal membuat pemesanan.';
+        get().showToast(message, 'error');
+        set({ step: 4 });
+      }
       return;
     }
 
-    const nights = diffInNights(state.search.checkIn, state.search.checkOut);
     const pricing = buildPriceSummary(
       roomPackage.pricePerNight,
       nights,
@@ -178,21 +278,97 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
     });
   },
 
-  confirmPayment: () =>
-    set((state) => ({
-      step: 6,
-      payment: {
-        ...state.payment,
-        status: 'PAID',
-        paidAt: new Date().toISOString(),
-        expiresAt: null,
-      },
+  confirmPayment: async () => {
+    if (!isNginepEnabled()) {
+      set((state) => ({
+        step: 6,
+        payment: {
+          ...state.payment,
+          status: 'PAID',
+          paidAt: new Date().toISOString(),
+          expiresAt: null,
+        },
+        toast: {
+          id: Date.now(),
+          message: 'Pembayaran berhasil dikonfirmasi.',
+          tone: 'success',
+        },
+      }));
+      return;
+    }
+
+    const reference = get().booking?.reference;
+    if (!reference) {
+      return;
+    }
+    // Re-entry guard: a second tap while polling must not spawn another loop.
+    if (get().pollingActive) {
+      return;
+    }
+    set({ pollingActive: true });
+
+    const POLL_INTERVAL_MS = 5000;
+    const MAX_ATTEMPTS = 60;
+
+    set({
       toast: {
         id: Date.now(),
-        message: 'Pembayaran berhasil dikonfirmasi.',
-        tone: 'success',
+        message: 'Menunggu konfirmasi pembayaran',
+        tone: 'info',
       },
-    })),
+    });
+
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+      if (get().step !== 5 || get().payment.status === 'EXPIRED') {
+        set({ pollingActive: false });
+        return;
+      }
+      const { promise: delay, resolve: tick } = Promise.withResolvers<void>();
+      setTimeout(tick, POLL_INTERVAL_MS);
+      await delay;
+      if (get().step !== 5 || get().payment.status === 'EXPIRED') {
+        set({ pollingActive: false });
+        return;
+      }
+      try {
+        const statusResult = await getBookingStatus(reference);
+        const status = statusResult?.status ?? null;
+        set((state) =>
+          state.booking && status
+            ? { booking: { ...state.booking, serverStatus: status } }
+            : {}
+        );
+        if (status === 'CONFIRMED') {
+          set((state) => ({
+            step: 6,
+            pollingActive: false,
+            payment: {
+              ...state.payment,
+              status: 'PAID',
+              paidAt: new Date().toISOString(),
+              expiresAt: null,
+            },
+            toast: {
+              id: Date.now(),
+              message: 'Pembayaran berhasil dikonfirmasi.',
+              tone: 'success',
+            },
+          }));
+          return;
+        }
+      } catch {
+        // Transient polling error: keep retrying until attempts exhausted.
+      }
+    }
+    set({ pollingActive: false });
+
+    if (get().step === 5) {
+      get().showToast(
+        'Konfirmasi pembayaran belum terverifikasi. Coba lagi nanti.',
+        'warning'
+      );
+    }
+  },
 
   expirePayment: () =>
     set((state) => ({
@@ -221,6 +397,8 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       selectedPackageId: null,
       booking: null,
       payment: initialPayment,
+      pollingActive: false,
+      bookingIdempotencyKey: null,
     }),
 
   showToast: (message, tone = 'info') =>

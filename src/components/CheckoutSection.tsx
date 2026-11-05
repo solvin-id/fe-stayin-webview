@@ -10,8 +10,8 @@ import { PriceBreakdown } from '@/components/checkout/PriceBreakdown';
 import { Button } from '@/components/ui/Button';
 import { StickyActionBar } from '@/components/ui/StickyActionBar';
 import { useBookingStore } from '@/stores/useBookingStore';
+import { useCatalogStore, findRoomInListings, findPackageInRoom } from '@/stores/useCatalogStore';
 import { useHostContext } from '@/hooks/useHostContext';
-import { getPackageById, getRoomById } from '@/data/hotels';
 import { diffInNights } from '@/lib/date';
 import { formatCurrency, formatDateWithDay } from '@/lib/formatters';
 import { buildPriceSummary } from '@/lib/pricing';
@@ -31,9 +31,11 @@ export const CheckoutSection = () => {
   const showToast = useBookingStore((state) => state.showToast);
   const { isAlfaTeve } = useHostContext();
   const [errors, setErrors] = useState<GuestFormErrors>({});
+  const [submitting, setSubmitting] = useState(false);
 
-  const room = getRoomById(selectedRoomId);
-  const roomPackage = getPackageById(room, selectedPackageId);
+  const catalogListings = useCatalogStore((state) => state.listings);
+  const room = findRoomInListings(catalogListings, selectedRoomId);
+  const roomPackage = findPackageInRoom(room, selectedPackageId);
   const nights = diffInNights(search.checkIn, search.checkOut);
   const pricing = useMemo(
     () => (roomPackage ? buildPriceSummary(roomPackage.pricePerNight, nights, search.rooms) : null),
@@ -54,7 +56,7 @@ export const CheckoutSection = () => {
     setErrors({});
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const nextErrors = validateGuest(guest);
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
@@ -62,7 +64,12 @@ export const CheckoutSection = () => {
       return;
     }
     setErrors({});
-    startPayment();
+    setSubmitting(true);
+    try {
+      await startPayment();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -124,7 +131,13 @@ export const CheckoutSection = () => {
               {formatCurrency(pricing.total)}
             </p>
           </div>
-          <Button variant="action" size="lg" onClick={handleSubmit} className="shrink-0">
+          <Button
+            variant="action"
+            size="lg"
+            onClick={handleSubmit}
+            isLoading={submitting}
+            className="shrink-0"
+          >
             Lanjut Bayar
           </Button>
         </div>

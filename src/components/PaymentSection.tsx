@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { StepProgress } from '@/components/common/StepProgress';
@@ -14,8 +15,18 @@ import { PaymentExpiredDialog } from '@/components/payment/PaymentExpiredDialog'
 import { useBookingStore } from '@/stores/useBookingStore';
 import { useHostContext } from '@/hooks/useHostContext';
 import { useCountdown } from '@/hooks/useCountdown';
+import { isNginepEnabled } from '@/lib/api/config';
+import { getSnapToken } from '@/services/payment.service';
 import { getPaymentMethod } from '@/data/mockData';
 import { formatCurrency, formatDateShort } from '@/lib/formatters';
+
+const SERVER_STATUS_LABELS: Record<string, string> = {
+  PENDING_PAYMENT: 'Menunggu Pembayaran',
+  PENDING: 'Menunggu Pembayaran',
+  CONFIRMED: 'Terkonfirmasi',
+  CANCELLED: 'Dibatalkan',
+  EXPIRED: 'Kedaluwarsa',
+};
 
 export const PaymentSection = () => {
   const booking = useBookingStore((state) => state.booking);
@@ -28,6 +39,25 @@ export const PaymentSection = () => {
   const goToStep = useBookingStore((state) => state.goToStep);
   const { isAlfaTeve } = useHostContext();
   const { label } = useCountdown(payment.expiresAt, expirePayment);
+  const [snapToken, setSnapToken] = useState<string | null>(null);
+  const apiMode = isNginepEnabled();
+
+  useEffect(() => {
+    if (!apiMode || !booking?.bookingCodes?.[0]) {
+      return;
+    }
+    let cancelled = false;
+    getSnapToken(booking.bookingIds?.[0] ?? booking.bookingCodes[0])
+      .then((response) => {
+        if (!cancelled && response?.snapToken) setSnapToken(response.snapToken);
+      })
+      .catch(() => {
+        // Snap unavailable: fall back to the VA/QRIS panels below.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [apiMode, booking?.bookingCodes]);
 
   if (!booking) {
     return null;
@@ -36,6 +66,10 @@ export const PaymentSection = () => {
   const method = getPaymentMethod(payment.method);
   const amount = booking.pricing.total;
   const expired = payment.status === 'EXPIRED';
+  const serverStatus = apiMode ? (booking.serverStatus ?? null) : null;
+  const statusBadge = expired
+    ? 'Kedaluwarsa'
+    : (serverStatus ? SERVER_STATUS_LABELS[serverStatus] ?? serverStatus : 'Menunggu Pembayaran');
 
   return (
     <div className="flex flex-1 flex-col bg-canvas">
@@ -61,8 +95,14 @@ export const PaymentSection = () => {
                 {booking.reference}
               </p>
             </div>
-            <span className="shrink-0 rounded-md bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700">
-              {expired ? 'Kedaluwarsa' : 'Menunggu Pembayaran'}
+            <span
+              className={
+                serverStatus === 'CONFIRMED'
+                  ? 'shrink-0 rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700'
+                  : 'shrink-0 rounded-md bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700'
+              }
+            >
+              {statusBadge}
             </span>
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-100 pt-2 text-[11px]">
@@ -101,6 +141,12 @@ export const PaymentSection = () => {
         ) : null}
         {payment.method === 'CREDIT_CARD' ? <CreditCardPanel method={method} /> : null}
 
+        {apiMode && snapToken ? (
+          <p className="rounded-xl bg-primary-surface px-3 py-2 text-[10px] font-semibold text-primary">
+            Midtrans Snap siap. Selesaikan pembayaran, lalu status akan diperbarui otomatis.
+          </p>
+        ) : null}
+
         <p className="flex items-center justify-center gap-1 pb-1 text-[10px] text-slate-400">
           <ShieldCheck size={11} /> Transaksi dilindungi enkripsi Stayin SecurePay
         </p>
@@ -119,11 +165,13 @@ export const PaymentSection = () => {
             disabled={expired}
             className="shrink-0"
           >
-            Saya Sudah Bayar
+            {apiMode ? 'Cek Status Pembayaran' : 'Saya Sudah Bayar'}
           </Button>
         </div>
         <p className="mt-1.5 text-center text-[9px] text-slate-400">
-          Tombol simulasi: pembayaran dianggap sukses.
+          {apiMode
+            ? 'Status pembayaran diperiksa otomatis setiap 5 detik.'
+            : 'Tombol simulasi: pembayaran dianggap sukses.'}
         </p>
       </StickyActionBar>
 

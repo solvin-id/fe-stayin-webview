@@ -18,6 +18,9 @@ const EMPTY_CONTEXT: HostContext = {
   isEmbedded: false,
 };
 
+const HOST_TOKEN_STORAGE_KEY = 'nginep_host_token';
+const TENANT_STORAGE_KEY = 'nginep_tenant';
+
 export const useHostContext = (): HostContext => {
   const [context, setContext] = useState<HostContext>(EMPTY_CONTEXT);
 
@@ -26,6 +29,21 @@ export const useHostContext = (): HostContext => {
     const token = params.get('token');
     const tenantId = params.get('tenant_id');
     const source = params.get('source');
+
+    try {
+      if (token) {
+        window.sessionStorage.setItem(HOST_TOKEN_STORAGE_KEY, token);
+      } else {
+        window.sessionStorage.removeItem(HOST_TOKEN_STORAGE_KEY);
+      }
+      if (tenantId) {
+        window.sessionStorage.setItem(TENANT_STORAGE_KEY, tenantId);
+      } else {
+        window.sessionStorage.removeItem(TENANT_STORAGE_KEY);
+      }
+    } catch {
+      // sessionStorage unavailable (private mode / storage disabled): state still works.
+    }
 
     setContext({
       token,

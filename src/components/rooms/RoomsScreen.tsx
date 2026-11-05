@@ -8,7 +8,10 @@ import { RoomDetailModal } from '@/components/RoomDetailModal';
 import { HotelInfoCard } from '@/components/rooms/HotelInfoCard';
 import { RoomList, RoomListSkeleton } from '@/components/rooms/RoomList';
 import { useBookingStore } from '@/stores/useBookingStore';
+import { useCatalogStore } from '@/stores/useCatalogStore';
 import { useHostContext } from '@/hooks/useHostContext';
+import { useAvailability } from '@/hooks/useAvailability';
+import { isNginepEnabled } from '@/lib/api/config';
 import { getHotelById, getRoomsByHotel } from '@/data/hotels';
 
 export const RoomsScreen = () => {
@@ -27,13 +30,30 @@ export const RoomsScreen = () => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const hotel = getHotelById(selectedHotelId);
-  const rooms = getRoomsByHotel(selectedHotelId);
+  const apiMode = isNginepEnabled();
+  const availability = useAvailability(search);
+  const catalogListings = useCatalogStore((state) => state.listings);
+
+  const mockHotel = getHotelById(selectedHotelId);
+  const hotel = apiMode
+    ? catalogListings.find((listing) =>
+        listing.rooms.some((room) => room.id === selectedHotelId)
+      )?.hotel ?? catalogListings[0]?.hotel
+    : mockHotel;
+  const mockRooms = getRoomsByHotel(selectedHotelId);
+  const rooms = apiMode ? availability.rooms : mockRooms;
+  const roomsLoading = apiMode
+    ? availability.status === 'idle' || availability.status === 'loading'
+    : loading;
 
   useEffect(() => {
+    if (apiMode) {
+      setLoading(false);
+      return;
+    }
     const timer = window.setTimeout(() => setLoading(false), 700);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [apiMode]);
 
   if (!hotel) {
     return (
@@ -102,8 +122,20 @@ export const RoomsScreen = () => {
           <span className="text-[11px] text-slate-500">{rooms.length} tipe tersedia</span>
         </div>
 
-        {loading ? (
+        {roomsLoading ? (
           <RoomListSkeleton />
+        ) : apiMode && availability.status === 'error' ? (
+          <div className="rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-card">
+            <p className="text-[13px] font-bold text-slate-900">Terjadi Kendala</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{availability.error}</p>
+            <button
+              type="button"
+              onClick={availability.retry}
+              className="mt-3 inline-flex min-h-[44px] items-center rounded-xl bg-primary px-5 text-[12px] font-bold text-white"
+            >
+              Coba Lagi
+            </button>
+          </div>
         ) : (
           <RoomList
             rooms={rooms}
@@ -134,6 +166,7 @@ export const RoomsScreen = () => {
         open={step === 3}
         roomId={selectedRoomId}
         packageId={selectedPackageId}
+        room={rooms.find((item) => item.id === selectedRoomId)}
         hotel={hotel}
         search={search}
         onSelectPackage={selectPackage}

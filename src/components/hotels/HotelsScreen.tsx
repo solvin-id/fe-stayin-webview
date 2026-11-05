@@ -10,8 +10,10 @@ import { HotelFilterButton } from '@/components/hotels/HotelFilterButton';
 import { HotelGroupCarousel } from '@/components/hotels/HotelGroupCarousel';
 import { CityFilterSheet } from '@/components/hotels/CityFilterSheet';
 import { useBookingStore } from '@/stores/useBookingStore';
+import { useCatalogStore } from '@/stores/useCatalogStore';
 import { useHostContext } from '@/hooks/useHostContext';
 import { closeWebview } from '@/services/bridge.service';
+import { isNginepEnabled } from '@/lib/api/config';
 import { HOTELS } from '@/data/hotels';
 import { getHotelGroups } from '@/data/hotelGroups';
 import { buildCityOptions, filterHotels } from '@/lib/hotelFilter';
@@ -27,22 +29,42 @@ export const HotelsScreen = () => {
   const selectHotel = useBookingStore((state) => state.selectHotel);
   const openGroup = useBookingStore((state) => state.openGroup);
   const showToast = useBookingStore((state) => state.showToast);
-  const { isAlfaTeve } = useHostContext();
+  const { tenantId, isAlfaTeve } = useHostContext();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const cityOptions = useMemo(() => buildCityOptions(HOTELS), []);
-  const partnerHotels = useMemo(() => getHotelGroups(), []);
-  const listings = useMemo(
-    () => filterHotels(HOTELS, hotelQuery, cityFilter),
-    [hotelQuery, cityFilter]
-  );
+  const apiMode = isNginepEnabled();
+  const catalogListings = useCatalogStore((state) => state.listings);
+  const catalogStatus = useCatalogStore((state) => state.status);
+  const catalogError = useCatalogStore((state) => state.error);
+  const loadCatalog = useCatalogStore((state) => state.load);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setLoading(false), 700);
-    return () => window.clearTimeout(timer);
-  }, []);
+    let cancelled = false;
+    // Load in BOTH modes: in API mode it fetches the profile, in mock mode it
+    // seeds HOTELS — startPayment resolves rooms through this store either way.
+    setLoading(true);
+    void loadCatalog(tenantId).finally(() => {
+      if (!cancelled) {
+        setLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiMode, tenantId]);
+
+  const mockCityOptions = useMemo(() => buildCityOptions(HOTELS), []);
+  const partnerHotels = useMemo(() => getHotelGroups(), []);
+
+  const sourceListings = apiMode ? catalogListings : HOTELS;
+  const listings = useMemo(
+    () => filterHotels(sourceListings, hotelQuery, cityFilter),
+    [sourceListings, hotelQuery, cityFilter]
+  );
+  const cityOptions = apiMode ? buildCityOptions(catalogListings) : mockCityOptions;
 
   const handleBack = () => {
     const target = closeWebview();
@@ -52,6 +74,10 @@ export const HotelsScreen = () => {
         : 'Menutup Stayin, kembali ke Alfa Teve.',
       'info'
     );
+  };
+
+  const handleRetry = () => {
+    void loadCatalog(tenantId);
   };
 
   return (
@@ -68,7 +94,7 @@ export const HotelsScreen = () => {
       </div>
 
       <div className="flex-1 space-y-2.5 px-3 pb-[calc(6rem+var(--host-bottom-offset,0px))] pt-2.5">
-        <HotelGroupCarousel groups={partnerHotels} onSelect={openGroup} />
+        {!apiMode ? <HotelGroupCarousel groups={partnerHotels} onSelect={openGroup} /> : null}
 
         <div className="flex items-center gap-2 px-0.5 pb-1 pt-4">
           <h2 className="text-[15px] font-bold text-slate-900">
@@ -80,6 +106,18 @@ export const HotelsScreen = () => {
 
         {loading ? (
           <HotelListSkeleton />
+        ) : apiMode && catalogStatus === 'error' ? (
+          <div className="rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-card">
+            <p className="text-[13px] font-bold text-slate-900">Terjadi Kendala</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{catalogError}</p>
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="mt-3 inline-flex min-h-[44px] items-center rounded-xl bg-primary px-5 text-[12px] font-bold text-white"
+            >
+              Coba Lagi
+            </button>
+          </div>
         ) : (
           <HotelList
             listings={listings}

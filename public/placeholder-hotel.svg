@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600" role="img" aria-label="Gambar hotel belum tersedia">
+  <rect width="900" height="600" fill="#e2e8f0"/>
+  <g fill="#94a3b8" transform="translate(450,300)">
+    <path d="M-60 40 L-60 -20 L0 -60 L60 -20 L60 40 Z" opacity="0.7"/>
+    <rect x="-38" y="-8" width="16" height="16" fill="#e2e8f0"/>
+    <rect x="22" y="-8" width="16" height="16" fill="#e2e8f0"/>
+    <rect x="-38" y="18" width="76" height="22" fill="#e2e8f0"/>
+    <text x="0" y="90" text-anchor="middle" font-family="system-ui, sans-serif" font-size="22" fill="#64748b">Gambar belum tersedia</text>
+  </g>
+</svg>
