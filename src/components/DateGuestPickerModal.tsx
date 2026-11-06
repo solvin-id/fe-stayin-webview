@@ -7,8 +7,6 @@ import { Button } from '@/components/ui/Button';
 import { CalendarGrid } from '@/components/search/CalendarGrid';
 import { SelectedDateSummary } from '@/components/search/SelectedDateSummary';
 import { GuestCounter } from '@/components/search/GuestCounter';
-import { lowestRateOf } from '@/lib/pricing';
-import { useCatalogStore } from '@/stores/useCatalogStore';
 import { addMonths, diffInNights, monthKey, monthLabel, resolveCalendarMonth, toIsoDate } from '@/lib/date';
 import { formatNights } from '@/lib/formatters';
 import type { SearchQuery } from '@/types/booking';
@@ -18,6 +16,9 @@ interface DateGuestPickerModalProps {
   search: SearchQuery;
   onClose: () => void;
   onApply: (search: SearchQuery) => void;
+  /** Property check-in/out times; shown only when the caller knows the property. */
+  checkInTime?: string;
+  checkOutTime?: string;
 }
 
 export const DateGuestPickerModal = ({
@@ -25,6 +26,8 @@ export const DateGuestPickerModal = ({
   search,
   onClose,
   onApply,
+  checkInTime,
+  checkOutTime,
 }: DateGuestPickerModalProps) => {
   const [minIso] = useState(() => toIsoDate(new Date()));
   const [checkIn, setCheckIn] = useState(search.checkIn);
@@ -51,8 +54,6 @@ export const DateGuestPickerModal = ({
     [checkIn, checkOut]
   );
 
-  const listings = useCatalogStore((state) => state.listings);
-  const nightlyRate = lowestRateOf(listings[0]);
   const canGoPrev =
     monthKey(visibleMonth.year, visibleMonth.month) > minIso.slice(0, 7);
 
@@ -78,7 +79,7 @@ export const DateGuestPickerModal = ({
       open={open}
       onClose={onClose}
       title="Pilih Tanggal & Tamu"
-      subtitle="Harga terbaik ditampilkan di setiap tanggal"
+      subtitle="Pilih tanggal menginap dan jumlah tamu"
       footer={
         <Button
           variant="action"
@@ -91,7 +92,12 @@ export const DateGuestPickerModal = ({
         </Button>
       }
     >
-      <SelectedDateSummary checkIn={checkIn} checkOut={checkOut} />
+      <SelectedDateSummary
+        checkIn={checkIn}
+        checkOut={checkOut}
+        {...(checkInTime ? { checkInTime } : {})}
+        {...(checkOutTime ? { checkOutTime } : {})}
+      />
 
       <div className="mb-1 flex items-center justify-between">
         <button
@@ -124,7 +130,6 @@ export const DateGuestPickerModal = ({
         checkIn={checkIn}
         checkOut={checkOut}
         minIso={minIso}
-        nightlyRate={nightlyRate}
         onSelect={handleSelect}
       />
 

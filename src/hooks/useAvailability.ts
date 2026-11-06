@@ -34,8 +34,11 @@ export const mapOffersToRooms = (offers: IAvailabilityOfferDto[], nights: number
         unitsLeft: offer.stock,
       },
     ];
+    // The API may serialize a missing list as null; the same guard the catalog
+    // store uses keeps the mapper from throwing on it.
+    const roomFacilities = Array.isArray(offer.room.facilities) ? offer.room.facilities : [];
     const facilities =
-      offer.room.facilities.length > 0 ? offer.room.facilities : offer.room.amenities;
+      roomFacilities.length > 0 ? roomFacilities : offer.room.amenities;
 
     return {
       id: offer.room.id,

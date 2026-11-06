@@ -2,7 +2,11 @@ import { getPaymentMethod } from '@/data/mockData';
 import { formatCurrency, formatDateWithDay } from '@/lib/formatters';
 import type { Booking } from '@/types/booking';
 
-export const buildVoucherText = (booking: Booking): string => {
+export const buildVoucherText = (
+  booking: Booking,
+  paid = true,
+  methodLabel?: string | null,
+): string => {
   const method = getPaymentMethod(booking.method);
   const guestName = booking.guest.bookingForOther
     ? booking.guest.guestName
@@ -19,18 +23,28 @@ export const buildVoucherText = (booking: Booking): string => {
     `Kamar          : ${booking.roomName} - ${booking.packageName}`,
     `Tamu Menginap  : ${guestName}`,
     `Jumlah Tamu    : ${booking.search.guests} tamu, ${booking.search.rooms} kamar`,
-    `Total Bayar    : ${formatCurrency(booking.pricing.total)} (LUNAS)`,
-    `Metode Bayar   : ${method.name}`,
+    `Total Bayar    : ${formatCurrency(booking.pricing.total)}${paid ? ' (LUNAS)' : ' (BELUM DIBAYAR)'}`,
+    `Metode Bayar   : ${methodLabel ?? method.name}`,
     '',
     'Tunjukkan voucher ini beserta identitas saat check-in.',
   ].join('\n');
 };
 
-export const buildWhatsAppUrl = (booking: Booking): string =>
-  `https://wa.me/?text=${encodeURIComponent(buildVoucherText(booking))}`;
+export const buildWhatsAppUrl = (
+  booking: Booking,
+  paid = true,
+  methodLabel?: string | null,
+): string =>
+  `https://wa.me/?text=${encodeURIComponent(
+    buildVoucherText(booking, paid, methodLabel),
+  )}`;
 
-export const downloadVoucherSummary = (booking: Booking): void => {
-  const blob = new Blob([buildVoucherText(booking)], {
+export const downloadVoucherSummary = (
+  booking: Booking,
+  paid = true,
+  methodLabel?: string | null,
+): void => {
+  const blob = new Blob([buildVoucherText(booking, paid, methodLabel)], {
     type: 'text/plain;charset=utf-8',
   });
   const url = URL.createObjectURL(blob);

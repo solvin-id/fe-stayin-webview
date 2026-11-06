@@ -9,6 +9,8 @@ interface GuestFormProps {
   guest: GuestDetails;
   errors: GuestFormErrors;
   onChange: (patch: Partial<GuestDetails>) => void;
+  /** True only when the host actually returned an identity for this launch. */
+  sso: boolean;
 }
 
 const inputClass = (hasError: boolean): string =>
@@ -19,16 +21,22 @@ const inputClass = (hasError: boolean): string =>
       : 'border-slate-200 focus:border-primary focus:ring-primary/15'
   );
 
-export const GuestForm = ({ guest, errors, onChange }: GuestFormProps) => (
+export const GuestForm = ({ guest, errors, onChange, sso }: GuestFormProps) => (
   <section className="rounded-2xl border border-slate-100 bg-white p-3.5 shadow-card">
     <header className="mb-3 flex items-center justify-between">
       <div>
         <h2 className="text-[14px] font-bold text-slate-900">Data Pemesan</h2>
-        <p className="text-[11px] text-slate-500">Terisi otomatis dari akun Alfa Teve</p>
+        <p className="text-[11px] text-slate-500">
+          {sso
+            ? 'Terisi otomatis dari akun Alfa Teve'
+            : 'Sesuai identitas saat check-in'}
+        </p>
       </div>
-      <span className="rounded-md bg-primary-surface px-1.5 py-0.5 text-[10px] font-semibold text-primary-dark">
-        SSO
-      </span>
+      {sso ? (
+        <span className="rounded-md bg-primary-surface px-1.5 py-0.5 text-[10px] font-semibold text-primary-dark">
+          SSO
+        </span>
+      ) : null}
     </header>
 
     <div className="space-y-3">

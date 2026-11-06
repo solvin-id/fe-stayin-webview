@@ -8,7 +8,7 @@ import { RoomDetailModal } from '@/components/RoomDetailModal';
 import { HotelInfoCard } from '@/components/rooms/HotelInfoCard';
 import { RoomList, RoomListSkeleton } from '@/components/rooms/RoomList';
 import { useBookingStore } from '@/stores/useBookingStore';
-import { useCatalogStore } from '@/stores/useCatalogStore';
+import { getListingById, useCatalogStore } from '@/stores/useCatalogStore';
 import { useHostContext } from '@/hooks/useHostContext';
 import { useAvailability } from '@/hooks/useAvailability';
 import { isNginepEnabled } from '@/lib/api/config';
@@ -36,9 +36,7 @@ export const RoomsScreen = () => {
 
   const mockHotel = getHotelById(selectedHotelId);
   const hotel = apiMode
-    ? catalogListings.find((listing) =>
-        listing.rooms.some((room) => room.id === selectedHotelId)
-      )?.hotel ?? catalogListings[0]?.hotel
+    ? getListingById(catalogListings, selectedHotelId)?.hotel
     : mockHotel;
   const mockRooms = getRoomsByHotel(selectedHotelId);
   const rooms = apiMode ? availability.rooms : mockRooms;
@@ -115,7 +113,14 @@ export const RoomsScreen = () => {
       </div>
 
       <div className="flex-1 space-y-2.5 px-3 pb-8 pt-2.5">
-        <HotelInfoCard hotel={hotel} />
+        <HotelInfoCard
+          hotel={hotel}
+          hasRefundablePackage={rooms.some((room) =>
+            room.packages.some(
+              (item) => item.cancellationPolicy === 'FREE_CANCELLATION_BEFORE_48H'
+            )
+          )}
+        />
 
         <div className="flex items-center justify-between px-0.5 pt-1">
           <h2 className="text-[15px] font-bold text-slate-900">Pilih Tipe Kamar</h2>
@@ -146,15 +151,17 @@ export const RoomsScreen = () => {
         )}
 
         <p className="pb-2 pt-1 text-center text-[10px] leading-relaxed text-slate-400">
-          Harga per malam sudah termasuk promo Alfa Teve.
-          <br />
           Pajak & biaya layanan dihitung di halaman pemesanan.
+          <br />
+          Pilih kamar untuk melihat rincian biaya.
         </p>
       </div>
 
       <DateGuestPickerModal
         open={pickerOpen}
         search={search}
+        checkInTime={hotel.checkInTime}
+        checkOutTime={hotel.checkOutTime}
         onClose={() => setPickerOpen(false)}
         onApply={(nextSearch) => {
           setSearch(nextSearch);

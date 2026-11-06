@@ -4,9 +4,13 @@ import type { IQuoteDto } from '@/types/api';
 import type { PriceSummary } from '@/types/booking';
 
 interface PriceBreakdownProps {
-  pricing: PriceSummary;
-  /** Server-computed breakdown; takes precedence over the local estimate. */
-  quote?: IQuoteDto | null;
+  /** Server-computed breakdown; wins whenever it exists. */
+  quote: IQuoteDto | null;
+  /** Local estimate, only produced in mock mode. */
+  pricing: PriceSummary | null;
+  nights: number;
+  rooms: number;
+  onRetry?: () => void;
   compact?: boolean;
 }
 
@@ -20,16 +24,61 @@ const chargeLabel = (quote: IQuoteDto): string => {
   return `Pajak & Biaya Layanan (${Math.round((charges / subtotal) * 100)}%)`;
 };
 
-export const PriceBreakdown = ({ pricing, quote, compact = false }: PriceBreakdownProps) => {
-  const usingQuote = quote !== null && quote !== undefined;
-  const roomTotal = usingQuote ? Number(quote.subtotal) : pricing.roomTotal;
-  const charges = usingQuote
-    ? Number(quote.serviceAmount) + Number(quote.taxAmount)
-    : pricing.tax;
-  const discount = usingQuote ? Number(quote.discountAmount) : pricing.discount;
-  const total = usingQuote ? Number(quote.total) : pricing.total;
-  const nights = usingQuote ? quote.nights : pricing.nights;
-  const pricePerNight = usingQuote ? Number(quote.pricePerNight) : pricing.pricePerNight;
+/**
+ * The guest's price, from one source at a time: the server quote in API mode, the
+ * local estimate in mock mode. With neither, the card says so and offers a retry —
+ * it never invents a tax rate or a discount.
+ */
+export const PriceBreakdown = ({
+  quote,
+  pricing,
+  nights,
+  rooms,
+  onRetry,
+  compact = false,
+}: PriceBreakdownProps) => {
+  if (!quote && !pricing) {
+    return (
+      <section className="rounded-2xl border border-slate-100 bg-white p-3.5 shadow-card">
+        <h2 className="text-[14px] font-bold text-slate-900">Rincian Biaya</h2>
+        <p className="mt-2 text-[12px] text-slate-500">Rincian biaya belum tersedia.</p>
+        {onRetry ? (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-2.5 min-h-[44px] rounded-xl bg-primary px-4 text-[12px] font-bold text-white"
+          >
+            Coba lagi
+          </button>
+        ) : null}
+      </section>
+    );
+  }
+
+  const usingQuote = quote !== null;
+  const breakdown = quote
+    ? {
+        roomTotal: Number(quote.subtotal),
+        charges: Number(quote.serviceAmount) + Number(quote.taxAmount),
+        discount: Number(quote.discountAmount),
+        total: Number(quote.total),
+        pricePerNight: Number(quote.pricePerNight),
+        shownNights: quote.nights,
+      }
+    : pricing
+      ? {
+          roomTotal: pricing.roomTotal,
+          charges: pricing.tax,
+          discount: pricing.discount,
+          total: pricing.total,
+          pricePerNight: pricing.pricePerNight,
+          shownNights: nights,
+        }
+      : null;
+  if (!breakdown) {
+    return null;
+  }
+  const { roomTotal, charges, discount, total, pricePerNight, shownNights } = breakdown;
 
   return (
     <section className="rounded-2xl border border-slate-100 bg-white p-3.5 shadow-card">
@@ -43,8 +92,8 @@ export const PriceBreakdown = ({ pricing, quote, compact = false }: PriceBreakdo
       <dl className="mt-2.5 space-y-2 text-[12px]">
         <div className="flex items-start justify-between gap-3">
           <dt className="text-slate-600">
-            Tarif Kamar ({nights} malam × {formatCurrency(pricePerNight)}
-            {pricing.rooms > 1 ? ` × ${pricing.rooms} kamar` : ''})
+            Tarif Kamar ({shownNights} malam × {formatCurrency(pricePerNight)}
+            {rooms > 1 ? ` × ${rooms} kamar` : ''})
           </dt>
           <dd className="shrink-0 font-semibold text-slate-900">
             {formatCurrency(roomTotal)}
@@ -52,7 +101,9 @@ export const PriceBreakdown = ({ pricing, quote, compact = false }: PriceBreakdo
         </div>
         <div className="flex items-start justify-between gap-3">
           <dt className="text-slate-600">
-            {usingQuote ? chargeLabel(quote) : `Pajak & Biaya Layanan (${Math.round(TAX_RATE * 100)}%)`}
+            {usingQuote
+              ? chargeLabel(quote)
+              : `Pajak & Biaya Layanan (${Math.round(TAX_RATE * 100)}%)`}
           </dt>
           <dd className="shrink-0 font-semibold text-slate-900">{formatCurrency(charges)}</dd>
         </div>

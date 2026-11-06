@@ -42,6 +42,14 @@ export const nginepFetch = async <T>(
   const headers: Record<string, string> = {
     [TENANT_HEADER]: tenant,
   };
+  // The host's signed guest token (from `?token=` at launch). The API trades it
+  // for the guest's identity; when it is absent the booking form stays manual.
+  if (typeof window !== 'undefined') {
+    const hostToken = window.sessionStorage.getItem('nginep_host_token');
+    if (hostToken) {
+      headers.authorization = `Bearer ${hostToken}`;
+    }
+  }
   if (options.body !== undefined) {
     headers['content-type'] = 'application/json';
   }

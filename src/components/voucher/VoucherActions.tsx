@@ -7,17 +7,27 @@ import { buildWhatsAppUrl, downloadVoucherSummary } from '@/services/voucher.ser
 import { useBookingStore } from '@/stores/useBookingStore';
 import type { Booking } from '@/types/booking';
 
-export const VoucherActions = ({ booking }: { booking: Booking }) => {
+interface VoucherActionsProps {
+  booking: Booking;
+  paid?: boolean;
+  methodLabel?: string | null;
+}
+
+export const VoucherActions = ({
+  booking,
+  paid = true,
+  methodLabel = null,
+}: VoucherActionsProps) => {
   const showToast = useBookingStore((state) => state.showToast);
   const startNewBooking = useBookingStore((state) => state.startNewBooking);
 
   const handleWhatsApp = () => {
-    window.open(buildWhatsAppUrl(booking), '_blank', 'noopener,noreferrer');
+    window.open(buildWhatsAppUrl(booking, paid, methodLabel), '_blank', 'noopener,noreferrer');
     showToast('Voucher dibuka di WhatsApp.', 'success');
   };
 
   const handleDownload = () => {
-    downloadVoucherSummary(booking);
+    downloadVoucherSummary(booking, paid, methodLabel);
     showToast('Ringkasan voucher diunduh.', 'success');
   };
 

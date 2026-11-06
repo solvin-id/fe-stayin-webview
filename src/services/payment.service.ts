@@ -1,24 +1,39 @@
 import { nginepFetch } from '@/lib/api/client';
 import { isNginepEnabled } from '@/lib/api/config';
-import type { IBookingsStatusDto } from '@/types/api';
+import type { IBookingsStatusDto, IPaymentInstructionDto } from '@/types/api';
+import type { PaymentMethodId } from '@/types/booking';
 
-export interface ISnapTokenResponse {
-  snapToken: string;
-}
-
-/** Requests a Midtrans Snap token for a held booking. */
-export const getSnapToken = async (
+/**
+ * Starts the payment for a held booking: the API charges Midtrans and returns the
+ * VA number / QR payload the guest must use. Returns null in mock mode.
+ */
+export const chargePayment = async (
   bookingId: string,
+  method: PaymentMethodId,
   tenant?: string,
-): Promise<ISnapTokenResponse | null> => {
+): Promise<IPaymentInstructionDto | null> => {
   if (!isNginepEnabled()) {
     return null;
   }
-  return nginepFetch<ISnapTokenResponse>('/payment/snap', {
+  return nginepFetch<IPaymentInstructionDto>('/payment/charge', {
     method: 'POST',
-    body: { bookingId },
+    body: { bookingId, method },
     tenant,
   });
+};
+
+/** The instrument already charged for this booking, or null when there is none. */
+export const getPaymentInstructions = async (
+  code: string,
+  tenant?: string,
+): Promise<IPaymentInstructionDto | null> => {
+  if (!isNginepEnabled()) {
+    return null;
+  }
+  return nginepFetch<IPaymentInstructionDto>(
+    `/storefront/bookings/${encodeURIComponent(code)}/payment`,
+    { tenant },
+  );
 };
 
 /**

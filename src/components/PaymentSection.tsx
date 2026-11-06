@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { StepProgress } from '@/components/common/StepProgress';
@@ -15,18 +15,15 @@ import { PaymentExpiredDialog } from '@/components/payment/PaymentExpiredDialog'
 import { useBookingStore } from '@/stores/useBookingStore';
 import { useHostContext } from '@/hooks/useHostContext';
 import { useCountdown } from '@/hooks/useCountdown';
+import { usePaymentInstructions } from '@/hooks/usePaymentInstructions';
 import { isNginepEnabled } from '@/lib/api/config';
-import { getSnapToken } from '@/services/payment.service';
-import { getPaymentMethod } from '@/data/mockData';
+import { PAYMENT_METHODS, getPaymentMethod } from '@/data/mockData';
 import { formatCurrency, formatDateShort } from '@/lib/formatters';
+import { SERVER_STATUS_LABELS } from '@/lib/status';
+import type { PaymentMethodId } from '@/types/booking';
 
-const SERVER_STATUS_LABELS: Record<string, string> = {
-  PENDING_PAYMENT: 'Menunggu Pembayaran',
-  PENDING: 'Menunggu Pembayaran',
-  CONFIRMED: 'Terkonfirmasi',
-  CANCELLED: 'Dibatalkan',
-  EXPIRED: 'Kedaluwarsa',
-};
+/** Card payment needs Snap's 3DS tokenisation, which the in-app panel does not have. */
+const API_PAYMENT_METHODS = PAYMENT_METHODS.filter((method) => method.id !== 'CREDIT_CARD');
 
 export const PaymentSection = () => {
   const booking = useBookingStore((state) => state.booking);
@@ -37,39 +34,48 @@ export const PaymentSection = () => {
   const restartAfterExpiry = useBookingStore((state) => state.restartAfterExpiry);
   const showToast = useBookingStore((state) => state.showToast);
   const goToStep = useBookingStore((state) => state.goToStep);
+  const completeServerPayment = useBookingStore((state) => state.completeServerPayment);
   const { isAlfaTeve } = useHostContext();
   const { label } = useCountdown(payment.expiresAt, expirePayment);
-  const [snapToken, setSnapToken] = useState<string | null>(null);
   const apiMode = isNginepEnabled();
+  const {
+    instruction,
+    status: instructionStatus,
+    error: instructionError,
+    charge,
+    retry: retryInstruction,
+  } = usePaymentInstructions(
+    booking?.bookingIds?.[0] ?? null,
+    booking?.reference ?? null
+  );
 
+  // The gateway's settlement reaches the server first; the instrument poll is how
+  // this screen learns about it, so the guest lands on the voucher without a tap.
   useEffect(() => {
-    if (!apiMode || !booking?.bookingCodes?.[0]) {
-      return;
+    if (instruction?.status === 'paid') {
+      completeServerPayment();
     }
-    let cancelled = false;
-    getSnapToken(booking.bookingIds?.[0] ?? booking.bookingCodes[0])
-      .then((response) => {
-        if (!cancelled && response?.snapToken) setSnapToken(response.snapToken);
-      })
-      .catch(() => {
-        // Snap unavailable: fall back to the VA/QRIS panels below.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [apiMode, booking?.bookingCodes]);
+  }, [instruction?.status, completeServerPayment]);
 
   if (!booking) {
     return null;
   }
 
-  const method = getPaymentMethod(payment.method);
+  const mockMethod = getPaymentMethod(payment.method);
+  const instructionMethod = instruction
+    ? getPaymentMethod(instruction.method as PaymentMethodId)
+    : null;
   const amount = booking.pricing.total;
   const expired = payment.status === 'EXPIRED';
   const serverStatus = apiMode ? (booking.serverStatus ?? null) : null;
   const statusBadge = expired
     ? 'Kedaluwarsa'
-    : (serverStatus ? SERVER_STATUS_LABELS[serverStatus] ?? serverStatus : 'Menunggu Pembayaran');
+    : instruction?.status === 'paid'
+      ? 'Pembayaran Diterima'
+      : (serverStatus
+          ? SERVER_STATUS_LABELS[serverStatus] ?? serverStatus
+          : 'Menunggu Pembayaran');
+  const buildingInstruction = instructionStatus === 'loading' && instruction === null;
 
   return (
     <div className="flex flex-1 flex-col bg-canvas">
@@ -97,7 +103,7 @@ export const PaymentSection = () => {
             </div>
             <span
               className={
-                serverStatus === 'CONFIRMED'
+                serverStatus === 'CONFIRMED' || instruction?.status === 'paid'
                   ? 'shrink-0 rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700'
                   : 'shrink-0 rounded-md bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700'
               }
@@ -127,28 +133,79 @@ export const PaymentSection = () => {
           </div>
         </section>
 
-        <PaymentMethodList selected={payment.method} onSelect={setPaymentMethod} />
+        <PaymentMethodList
+          methods={apiMode ? API_PAYMENT_METHODS : PAYMENT_METHODS}
+          selected={payment.method}
+          onSelect={setPaymentMethod}
+          disabled={apiMode && instruction !== null}
+        />
 
-        {payment.method === 'BCA_VA' || payment.method === 'MANDIRI_VA' ? (
-          <VirtualAccountPanel
-            method={method}
-            amount={amount}
-            onCopy={(message) => showToast(message, 'success')}
-          />
+        {apiMode && instructionError ? (
+          <section className="rounded-2xl border border-red-200 bg-red-50 p-3.5">
+            <p className="text-[12px] font-semibold text-red-700">{instructionError}</p>
+            <button
+              type="button"
+              onClick={retryInstruction}
+              className="mt-2 min-h-[44px] rounded-xl bg-white px-4 text-[12px] font-bold text-red-700 shadow-sm"
+            >
+              Coba Lagi
+            </button>
+          </section>
         ) : null}
-        {payment.method === 'QRIS' ? (
-          <QrisPanel method={method} amount={amount} reference={booking.reference} />
-        ) : null}
-        {payment.method === 'CREDIT_CARD' ? <CreditCardPanel method={method} /> : null}
 
-        {apiMode && snapToken ? (
-          <p className="rounded-xl bg-primary-surface px-3 py-2 text-[10px] font-semibold text-primary">
-            Midtrans Snap siap. Selesaikan pembayaran, lalu status akan diperbarui otomatis.
+        {apiMode && instruction && instructionMethod ? (
+          instruction.method === 'QRIS' ? (
+            <QrisPanel
+              method={instructionMethod}
+              amount={amount}
+              qrString={instruction.qrString}
+            />
+          ) : instruction.method === 'CREDIT_CARD' ? (
+            <CreditCardPanel method={instructionMethod} />
+          ) : (
+            <VirtualAccountPanel
+              method={instructionMethod}
+              amount={amount}
+              vaNumber={instruction.vaNumber}
+              billerCode={instruction.billerCode}
+              billKey={instruction.billKey}
+              onCopy={(message) => showToast(message, 'success')}
+            />
+          )
+        ) : null}
+
+        {apiMode && instruction && instruction.status !== 'pending' ? (
+          <p className="rounded-xl bg-slate-100 px-3 py-2 text-[11px] font-semibold text-slate-700">
+            {instruction.status === 'paid'
+              ? 'Pembayaran diterima. Menunggu konfirmasi hotel.'
+              : 'Pembayaran gagal atau kedaluwarsa. Buat ulang sesuai batas waktu.'}
           </p>
         ) : null}
 
+        {!apiMode && (payment.method === 'BCA_VA' || payment.method === 'MANDIRI_VA') ? (
+          <VirtualAccountPanel
+            method={mockMethod}
+            amount={amount}
+            vaNumber={mockMethod.vaNumber ?? null}
+            onCopy={(message) => showToast(message, 'success')}
+          />
+        ) : null}
+        {!apiMode && payment.method === 'QRIS' ? (
+          <QrisPanel
+            method={mockMethod}
+            amount={amount}
+            qrString={mockMethod.qrPayload ?? null}
+          />
+        ) : null}
+        {!apiMode && payment.method === 'CREDIT_CARD' ? (
+          <CreditCardPanel method={mockMethod} />
+        ) : null}
+
         <p className="flex items-center justify-center gap-1 pb-1 text-[10px] text-slate-400">
-          <ShieldCheck size={11} /> Transaksi dilindungi enkripsi Stayin SecurePay
+          <ShieldCheck size={11} />
+          {apiMode
+            ? 'Pembayaran diproses oleh Midtrans.'
+            : 'Transaksi dilindungi enkripsi Stayin SecurePay'}
         </p>
       </div>
 
@@ -161,16 +218,23 @@ export const PaymentSection = () => {
           <Button
             variant="action"
             size="lg"
-            onClick={confirmPayment}
-            disabled={expired}
+            onClick={apiMode && !instruction ? () => charge(payment.method) : confirmPayment}
+            isLoading={buildingInstruction}
+            disabled={expired || (apiMode && !instruction && !booking.bookingIds?.length)}
             className="shrink-0"
           >
-            {apiMode ? 'Cek Status Pembayaran' : 'Saya Sudah Bayar'}
+            {apiMode
+              ? instruction
+                ? 'Cek Status Pembayaran'
+                : buildingInstruction
+                  ? 'Membuat nomor pembayaran…'
+                  : 'Lanjutkan Pembayaran'
+              : 'Saya Sudah Bayar'}
           </Button>
         </div>
         <p className="mt-1.5 text-center text-[9px] text-slate-400">
           {apiMode
-            ? 'Status pembayaran diperiksa otomatis setiap 5 detik.'
+            ? 'Status diperiksa otomatis setiap 5 detik selama halaman ini terbuka.'
             : 'Tombol simulasi: pembayaran dianggap sukses.'}
         </p>
       </StickyActionBar>

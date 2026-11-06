@@ -127,7 +127,7 @@ export const HotelsScreen = () => {
         )}
 
         <p className="pb-2 pt-1 text-center text-[10px] leading-relaxed text-slate-400">
-          Harga per malam sudah termasuk promo Alfa Teve.
+          Pajak & biaya layanan dihitung di halaman pemesanan.
           <br />
           Pilih hotel untuk melihat tipe kamar yang tersedia.
         </p>

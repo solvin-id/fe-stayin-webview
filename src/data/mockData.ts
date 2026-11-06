@@ -1,3 +1,4 @@
+import { addDays } from '@/lib/date';
 import type {
   GuestDetails,
   PaymentMethodId,
@@ -47,11 +48,23 @@ export const SPECIAL_REQUESTS: Array<{ id: SpecialRequestId; label: string }> = 
   { id: 'LARGE_BED', label: 'Ranjang Besar' },
 ];
 
-export const DEFAULT_SEARCH: SearchQuery = {
-  checkIn: '2026-11-14',
-  checkOut: '2026-11-16',
+/** Tomorrow-to-day-after: a search that never starts in the past. */
+export const buildDefaultSearch = (today: string): SearchQuery => ({
+  checkIn: addDays(today, 1),
+  checkOut: addDays(today, 3),
   guests: 2,
   rooms: 1,
+});
+
+/** API mode starts with an empty form; `useGuestProfile` fills what the host vouches for. */
+export const BLANK_GUEST: GuestDetails = {
+  fullName: '',
+  email: '',
+  phone: '',
+  bookingForOther: false,
+  guestName: '',
+  specialRequests: [],
+  notes: '',
 };
 
 export const GUEST_PROFILE: GuestDetails = {

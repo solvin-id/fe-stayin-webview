@@ -16,7 +16,7 @@ export const PaymentExpiredDialog = ({ open, onRestart }: PaymentExpiredDialogPr
         <TimerOff size={30} />
       </span>
       <p className="mt-3 text-[13px] font-semibold text-slate-900">
-        Hold kamar 15 menit telah berakhir
+        Waktu pembayaran telah berakhir
       </p>
       <p className="mt-1 text-[12px] leading-relaxed text-slate-500">
         Stok kamar dilepas kembali. Silakan pilih kamar dan lakukan pembayaran ulang.

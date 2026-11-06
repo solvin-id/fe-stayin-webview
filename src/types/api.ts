@@ -19,7 +19,6 @@ export interface ITenantDto {
   heroImageUrl: string | null;
   galleryUrls: string[];
   facilities: string[];
-  taxRate: string | null;
   currency: string;
   rooms: IRoomDto[];
 }
@@ -79,6 +78,8 @@ export interface IQuoteDto {
   total: string;
   currency: string;
   promoCode: string | null;
+  /** Signed, short-lived token the booking posts back to lock this price. */
+  quoteToken: string;
 }
 
 /** Money fields are decimal strings to avoid float rounding. */
@@ -106,9 +107,46 @@ export interface IBookingRecordDto {
   taxAmount: string;
   serviceAmount: string;
   createdAt: string;
+  /** Payment deadline; null only for rows that predate universal holds. */
+  holdExpiresAt?: string | null;
 }
 
-/** Booking status lookup by public code (GET /api/storefront/bookings/:code) — flat shape. */
-export type IBookingsStatusDto = IBookingRecordDto;
+/**
+ * Booking status lookup by public code (GET /api/storefront/bookings/:code).
+ * Deliberately narrower than a booking row: guests get no email/phone/tenant id.
+ */
+export interface IBookingsStatusDto {
+  code: string;
+  status: string;
+  total: string;
+  subtotal: string;
+  taxAmount: string;
+  discountAmount: string;
+  serviceAmount: string;
+  checkIn: string;
+  checkOut: string;
+  guestName: string;
+  createdAt: string;
+  holdExpiresAt: string | null;
+}
+
+/** POST /api/storefront/guest-session — the host's signed guest identity. */
+export interface IGuestProfileDto {
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
+/** GET /api/storefront/bookings/:code/payment — server-issued payment instrument. */
+export interface IPaymentInstructionDto {
+  method: string;
+  status: string;
+  vaNumber: string | null;
+  billerCode: string | null;
+  billKey: string | null;
+  qrString: string | null;
+  expiresAt: string | null;
+  chargedAt: string | null;
+}
 
 export type IHotelProfileDto = ITenantDto;

@@ -2,9 +2,8 @@
 
 import { CreditCard, Landmark, QrCode } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { PAYMENT_METHODS } from '@/data/mockData';
 import { cn } from '@/lib/utils';
-import type { PaymentMethodId } from '@/types/booking';
+import type { PaymentMethodId, PaymentMethodMeta } from '@/types/booking';
 
 const ICONS: Record<PaymentMethodId, LucideIcon> = {
   BCA_VA: Landmark,
@@ -14,15 +13,23 @@ const ICONS: Record<PaymentMethodId, LucideIcon> = {
 };
 
 interface PaymentMethodListProps {
+  methods: PaymentMethodMeta[];
   selected: PaymentMethodId;
   onSelect: (method: PaymentMethodId) => void;
+  /** Locked once the gateway has issued an instrument for this booking. */
+  disabled?: boolean;
 }
 
-export const PaymentMethodList = ({ selected, onSelect }: PaymentMethodListProps) => (
+export const PaymentMethodList = ({
+  methods,
+  selected,
+  onSelect,
+  disabled = false,
+}: PaymentMethodListProps) => (
   <section className="rounded-2xl border border-slate-100 bg-white p-3.5 shadow-card">
     <h2 className="text-[14px] font-bold text-slate-900">Metode Pembayaran</h2>
     <div className="mt-2 space-y-1.5">
-      {PAYMENT_METHODS.map((method) => {
+      {methods.map((method) => {
         const active = method.id === selected;
         const Icon = ICONS[method.id];
         return (
@@ -30,12 +37,14 @@ export const PaymentMethodList = ({ selected, onSelect }: PaymentMethodListProps
             key={method.id}
             type="button"
             aria-pressed={active}
+            disabled={disabled}
             onClick={() => onSelect(method.id)}
             className={cn(
               'flex min-h-[56px] w-full items-center gap-2.5 rounded-xl border p-2.5 text-left transition-colors',
               active
                 ? 'border-primary bg-primary-surface'
-                : 'border-slate-200 bg-white active:bg-slate-50'
+                : 'border-slate-200 bg-white active:bg-slate-50',
+              disabled && 'opacity-60'
             )}
           >
             <span
@@ -66,5 +75,10 @@ export const PaymentMethodList = ({ selected, onSelect }: PaymentMethodListProps
         );
       })}
     </div>
+    {disabled ? (
+      <p className="mt-2 text-[10px] text-slate-500">
+        Metode tidak dapat diubah setelah nomor pembayaran dibuat.
+      </p>
+    ) : null}
   </section>
 );

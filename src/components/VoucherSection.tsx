@@ -3,17 +3,29 @@
 import { CheckCircle2, Copy, ShieldCheck } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { StepProgress } from '@/components/common/StepProgress';
-import { MockQrCode } from '@/components/voucher/MockQrCode';
+import { QrCode } from '@/components/common/QrCode';
 import { VoucherDetails } from '@/components/voucher/VoucherDetails';
 import { VoucherActions } from '@/components/voucher/VoucherActions';
 import { useBookingStore } from '@/stores/useBookingStore';
 import { useHostContext } from '@/hooks/useHostContext';
+import { usePaymentInstructions } from '@/hooks/usePaymentInstructions';
+import { getPaymentMethod } from '@/data/mockData';
+import { serverStatusLabel } from '@/lib/status';
+import type { PaymentMethodId } from '@/types/booking';
 
 export const VoucherSection = () => {
   const booking = useBookingStore((state) => state.booking);
   const payment = useBookingStore((state) => state.payment);
   const showToast = useBookingStore((state) => state.showToast);
   const { isAlfaTeve } = useHostContext();
+  const { instruction } = usePaymentInstructions(
+    booking?.bookingIds?.[0] ?? null,
+    booking?.reference ?? null
+  );
+  const paid = payment.status === 'PAID';
+  const methodLabel = instruction
+    ? getPaymentMethod(instruction.method as PaymentMethodId).name
+    : null;
 
   if (!booking) {
     return null;
@@ -44,8 +56,8 @@ export const VoucherSection = () => {
             <div>
               <p className="text-[15px] font-bold text-emerald-800">Pemesanan Berhasil</p>
               <p className="text-[11px] font-semibold text-emerald-700">
-                Confirmed ·{' '}
-                {payment.status === 'PAID' ? 'Pembayaran lunas' : 'Menunggu verifikasi'}
+                {serverStatusLabel(booking.serverStatus)} ·{' '}
+                {paid ? 'Pembayaran lunas' : 'Menunggu verifikasi'}
               </p>
               <p className="mt-1 text-[11px] leading-relaxed text-emerald-700">
                 Tunjukkan e-voucher ini ke resepsionis saat check-in.
@@ -74,19 +86,16 @@ export const VoucherSection = () => {
           </div>
 
           <div className="mt-3 flex flex-col items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/60 p-3">
-            <MockQrCode
-              value={`STAYIN|${booking.reference}|${booking.hotel.id}|${booking.search.checkIn}|${booking.search.checkOut}`}
-              size={188}
-            />
+            <QrCode value={booking.reference} size={188} label="QR check-in reservasi" />
             <p className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-slate-500">
               <ShieldCheck size={11} className="text-emerald-600" /> Scan QR untuk verifikasi
-              check-in (demo)
+              check-in
             </p>
           </div>
         </section>
 
-        <VoucherDetails booking={booking} />
-        <VoucherActions booking={booking} />
+        <VoucherDetails booking={booking} paid={paid} methodLabel={methodLabel} />
+        <VoucherActions booking={booking} paid={paid} methodLabel={methodLabel} />
 
         <p className="pb-2 text-center text-[10px] leading-relaxed text-slate-400">
           Voucher digital diterbitkan oleh Stayin untuk {booking.hotel.name}.

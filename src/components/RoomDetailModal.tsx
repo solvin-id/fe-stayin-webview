@@ -7,7 +7,10 @@ import { RoomImageCarousel } from '@/components/room/RoomImageCarousel';
 import { RoomPolicies } from '@/components/room/RoomPolicies';
 import { FacilityIcon } from '@/components/room/FacilityIcon';
 import { PackageSelector } from '@/components/room/PackageSelector';
+import { PriceBreakdown } from '@/components/checkout/PriceBreakdown';
 import { getPackageById, getRoomById } from '@/data/hotels';
+import { useQuote } from '@/hooks/useQuote';
+import { isNginepEnabled } from '@/lib/api/config';
 import { diffInNights } from '@/lib/date';
 import { formatCurrency } from '@/lib/formatters';
 import { buildPriceSummary } from '@/lib/pricing';
@@ -38,13 +41,32 @@ export const RoomDetailModal = ({
   onContinue,
 }: RoomDetailModalProps) => {
   const room = roomProp ?? getRoomById(roomId);
-  if (!room) {
+  const nights = diffInNights(search.checkIn, search.checkOut);
+  const activePackage = room
+    ? (getPackageById(room, packageId) ?? room.packages[0])
+    : undefined;
+  const apiMode = isNginepEnabled();
+  // Same quote the checkout uses, requested here first so the total in this sheet
+  // is the total the guest will be charged, not a local re-derivation.
+  const { quote, retry } = useQuote(
+    apiMode && open && room && search.checkIn && search.checkOut
+      ? {
+          roomId: room.id,
+          checkIn: search.checkIn,
+          checkOut: search.checkOut,
+          guests: search.guests,
+        }
+      : null
+  );
+
+  if (!room || !activePackage) {
     return null;
   }
 
-  const nights = diffInNights(search.checkIn, search.checkOut);
-  const activePackage = getPackageById(room, packageId) ?? room.packages[0];
-  const pricing = buildPriceSummary(activePackage.pricePerNight, nights, search.rooms);
+  const pricing = apiMode
+    ? null
+    : buildPriceSummary(activePackage.pricePerNight, nights, search.rooms);
+  const total = quote ? Number(quote.total) : pricing ? pricing.total : null;
 
   return (
     <BottomSheet
@@ -57,7 +79,7 @@ export const RoomDetailModal = ({
           <div className="min-w-0 flex-1">
             <p className="text-[10px] text-slate-500">Total {nights} malam</p>
             <p className="truncate text-[16px] font-bold text-primary">
-              {formatCurrency(pricing.total)}
+              {total !== null ? formatCurrency(total) : 'Menghitung…'}
             </p>
           </div>
           <Button variant="action" size="lg" onClick={onContinue} className="shrink-0">
@@ -112,9 +134,36 @@ export const RoomDetailModal = ({
         />
       </div>
 
+      {quote || pricing ? (
+        <div className="mt-3">
+          <PriceBreakdown
+            quote={quote}
+            pricing={pricing}
+            nights={nights}
+            rooms={search.rooms}
+            onRetry={retry}
+            compact
+          />
+        </div>
+      ) : (
+        <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+          <p className="text-[11px] text-slate-600">
+            {formatCurrency(activePackage.pricePerNight)} per malam · {nights} malam
+          </p>
+          <button
+            type="button"
+            onClick={retry}
+            className="mt-1 text-[11px] font-semibold text-primary underline"
+          >
+            Hitung total
+          </button>
+        </div>
+      )}
+
       <p className="py-3 text-[11px] leading-relaxed text-slate-500">
-        Harga belum termasuk pajak dan biaya layanan; rinciannya dihitung pada halaman
-        pemesanan.
+        {quote
+          ? 'Harga di atas sudah termasuk pajak dan biaya layanan sesuai kebijakan hotel.'
+          : 'Harga belum termasuk pajak dan biaya layanan; rinciannya dihitung pada halaman pemesanan.'}
       </p>
     </BottomSheet>
   );

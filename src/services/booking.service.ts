@@ -16,6 +16,8 @@ export interface ICreateBookingInput {
   notes?: string;
   /** The rate plan/package the guest chose; must belong to `roomId`. */
   ratePlanId?: string;
+  /** Locks the quoted price; a mismatch is rejected by the API (412). */
+  quoteToken?: string;
 }
 
 export const randomKey = (): string =>

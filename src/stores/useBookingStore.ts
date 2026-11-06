@@ -1,7 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import { DEFAULT_SEARCH, GUEST_PROFILE } from '@/data/mockData';
+import { BLANK_GUEST, GUEST_PROFILE, buildDefaultSearch } from '@/data/mockData';
 import { isNginepEnabled } from '@/lib/api/config';
 import { NginepApiError } from '@/lib/api/errors';
 import { createBooking, randomKey } from '@/services/booking.service';
@@ -12,8 +12,8 @@ import {
   getListingById,
   useCatalogStore,
 } from '@/stores/useCatalogStore';
-import { diffInNights } from '@/lib/date';
-import { PAYMENT_WINDOW_SECONDS, buildPriceSummary } from '@/lib/pricing';
+import { diffInNights, todayISO } from '@/lib/date';
+import { DEFAULT_PAYMENT_WINDOW_MS, buildPriceSummary } from '@/lib/pricing';
 import type {
   Booking,
   BookingStep,
@@ -60,6 +60,10 @@ interface BookingStore {
   pollingActive: boolean;
   /** Stable per-submission idempotency key, reused across retries of one intent. */
   bookingIdempotencyKey: string | null;
+  /** Token from the last successful quote; locks the price when booking. */
+  quoteToken: string | null;
+  /** Server already reported the payment as settled (gateway webhook landed). */
+  completeServerPayment: () => void;
   openGroup: (groupId: string) => void;
   closeGroup: () => void;
   selectHotel: (hotelId: string) => void;
@@ -78,6 +82,7 @@ interface BookingStore {
   confirmPayment: () => Promise<void>;
   expirePayment: () => void;
   restartAfterExpiry: () => void;
+  setQuoteToken: (token: string | null) => void;
   startNewBooking: () => void;
   showToast: (message: string, tone?: ToastTone) => void;
   hideToast: () => void;
@@ -85,19 +90,20 @@ interface BookingStore {
 
 export const useBookingStore = create<BookingStore>((set, get) => ({
   step: 1,
-  search: DEFAULT_SEARCH,
+  search: buildDefaultSearch(todayISO()),
   hotelQuery: '',
   cityFilter: null,
   selectedHotelId: null,
   selectedRoomId: null,
   selectedPackageId: null,
-  guest: GUEST_PROFILE,
+  guest: isNginepEnabled() ? BLANK_GUEST : GUEST_PROFILE,
   payment: initialPayment,
   booking: null,
   toast: null,
   activeGroupId: null,
   pollingActive: false,
   bookingIdempotencyKey: null,
+  quoteToken: null,
 
   openGroup: (activeGroupId) => set({ activeGroupId }),
 
@@ -112,6 +118,7 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       selectedPackageId: null,
       booking: null,
       payment: initialPayment,
+      quoteToken: null,
     }),
 
   openRoomDetail: (roomId, packageId) =>
@@ -122,6 +129,28 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
   goToStep: (step) => set({ step }),
 
   setSearch: (search) => set({ search }),
+
+  setQuoteToken: (quoteToken) => set({ quoteToken }),
+
+  completeServerPayment: () =>
+    set((state) => ({
+      step: 6,
+      pollingActive: false,
+      booking: state.booking
+        ? { ...state.booking, serverStatus: 'CONFIRMED' }
+        : state.booking,
+      payment: {
+        ...state.payment,
+        status: 'PAID',
+        paidAt: new Date().toISOString(),
+        expiresAt: null,
+      },
+      toast: {
+        id: Date.now(),
+        message: 'Pembayaran berhasil dikonfirmasi.',
+        tone: 'success',
+      },
+    })),
 
   setHotelQuery: (hotelQuery) => set({ hotelQuery }),
 
@@ -195,6 +224,7 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
             specialRequests: state.guest.specialRequests,
             notes: state.guest.notes,
             ...(roomPackage.ratePlanId ? { ratePlanId: roomPackage.ratePlanId } : {}),
+            ...(state.quoteToken ? { quoteToken: state.quoteToken } : {}),
           },
           undefined,
           idempotencyKey,
@@ -235,7 +265,11 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
           payment: {
             ...current.payment,
             status: 'PENDING',
-            expiresAt: Date.now() + PAYMENT_WINDOW_SECONDS * 1000,
+            // The server owns the deadline: it is the same number the sweep and
+            // the gateway expire on.
+            expiresAt: record.holdExpiresAt
+              ? new Date(record.holdExpiresAt).getTime()
+              : Date.now() + DEFAULT_PAYMENT_WINDOW_MS,
             paidAt: null,
           },
         });
@@ -276,7 +310,7 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       payment: {
         ...state.payment,
         status: 'PENDING',
-        expiresAt: Date.now() + PAYMENT_WINDOW_SECONDS * 1000,
+        expiresAt: Date.now() + DEFAULT_PAYMENT_WINDOW_MS,
         paidAt: null,
       },
     });
@@ -337,11 +371,29 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       try {
         const statusResult = await getBookingStatus(reference);
         const status = statusResult?.status ?? null;
-        set((state) =>
-          state.booking && status
-            ? { booking: { ...state.booking, serverStatus: status } }
-            : {}
-        );
+        const serverExpiresAt = statusResult?.holdExpiresAt
+          ? new Date(statusResult.holdExpiresAt).getTime()
+          : null;
+        if (status === 'EXPIRED' || status === 'CANCELLED') {
+          set((state) => ({
+            pollingActive: false,
+            booking:
+              state.booking && status
+                ? { ...state.booking, serverStatus: status }
+                : state.booking,
+            payment: { ...state.payment, status: 'EXPIRED', expiresAt: null },
+          }));
+          return;
+        }
+        set((state) => ({
+          booking:
+            state.booking && status
+              ? { ...state.booking, serverStatus: status }
+              : state.booking,
+          payment: serverExpiresAt
+            ? { ...state.payment, expiresAt: serverExpiresAt }
+            : state.payment,
+        }));
         if (status === 'CONFIRMED') {
           set((state) => ({
             step: 6,
@@ -385,6 +437,7 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       step: hotelId ? 2 : 1,
       booking: null,
       payment: initialPayment,
+      quoteToken: null,
       selectedRoomId: null,
       selectedPackageId: null,
     });
@@ -403,6 +456,7 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       payment: initialPayment,
       pollingActive: false,
       bookingIdempotencyKey: null,
+      quoteToken: null,
     }),
 
   showToast: (message, tone = 'info') =>

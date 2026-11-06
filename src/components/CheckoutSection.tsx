@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, ChevronRight, ShieldCheck } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { StepProgress } from '@/components/common/StepProgress';
@@ -13,8 +13,10 @@ import { useBookingStore } from '@/stores/useBookingStore';
 import { useCatalogStore, findRoomInListings, findPackageInRoom } from '@/stores/useCatalogStore';
 import { useHostContext } from '@/hooks/useHostContext';
 import { useQuote } from '@/hooks/useQuote';
+import { useGuestProfile } from '@/hooks/useGuestProfile';
 import { diffInNights } from '@/lib/date';
 import { formatCurrency, formatDateWithDay } from '@/lib/formatters';
+import { isNginepEnabled } from '@/lib/api/config';
 import { buildPriceSummary } from '@/lib/pricing';
 import { validateGuest, type GuestFormErrors } from '@/lib/validation';
 import type { GuestDetails } from '@/types/booking';
@@ -28,9 +30,11 @@ export const CheckoutSection = () => {
   const updateGuest = useBookingStore((state) => state.updateGuest);
   const toggleSpecialRequest = useBookingStore((state) => state.toggleSpecialRequest);
   const startPayment = useBookingStore((state) => state.startPayment);
+  const setQuoteToken = useBookingStore((state) => state.setQuoteToken);
   const goToStep = useBookingStore((state) => state.goToStep);
   const showToast = useBookingStore((state) => state.showToast);
   const { isAlfaTeve } = useHostContext();
+  const { profile } = useGuestProfile();
   const [errors, setErrors] = useState<GuestFormErrors>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -38,13 +42,17 @@ export const CheckoutSection = () => {
   const room = findRoomInListings(catalogListings, selectedRoomId);
   const roomPackage = findPackageInRoom(room, selectedPackageId);
   const nights = diffInNights(search.checkIn, search.checkOut);
+  // Local numbers exist only for mock mode; API mode never renders a price the
+  // server did not produce.
+  const apiMode = isNginepEnabled();
   const pricing = useMemo(
-    () => (roomPackage ? buildPriceSummary(roomPackage.pricePerNight, nights, search.rooms) : null),
-    [roomPackage, nights, search.rooms]
+    () =>
+      !apiMode && roomPackage
+        ? buildPriceSummary(roomPackage.pricePerNight, nights, search.rooms)
+        : null,
+    [apiMode, roomPackage, nights, search.rooms]
   );
-  // The property's own tax/service policy and voucher decide the final amount;
-  // the local estimate above only fills the card until the quote arrives.
-  const { quote } = useQuote(
+  const { quote, retry: retryQuote } = useQuote(
     room && search.checkIn && search.checkOut
       ? {
           roomId: room.id,
@@ -55,7 +63,13 @@ export const CheckoutSection = () => {
       : null
   );
 
-  if (!room || !roomPackage || !pricing) {
+  // The booking posts this back so the server can prove the price it charges is
+  // the price this guest was shown.
+  useEffect(() => {
+    setQuoteToken(quote?.quoteToken ?? null);
+  }, [quote, setQuoteToken]);
+
+  if (!room || !roomPackage) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
         <p className="text-sm font-semibold text-slate-700">Kamar belum dipilih.</p>
@@ -111,7 +125,7 @@ export const CheckoutSection = () => {
                 {nights} malam · {search.guests} tamu · {search.rooms} kamar
               </p>
               <p className="mt-1 inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
-                <ShieldCheck size={10} /> Kamar dikunci 15 menit setelah lanjut bayar
+                <ShieldCheck size={10} /> Kamar ditahan sampai batas waktu pembayaran
               </p>
             </div>
           </div>
@@ -128,12 +142,23 @@ export const CheckoutSection = () => {
           </div>
         </section>
 
-        <GuestForm guest={guest} errors={errors} onChange={handleChange} />
+        <GuestForm
+          guest={guest}
+          errors={errors}
+          onChange={handleChange}
+          sso={profile !== null}
+        />
         <SpecialRequestChips
           selected={guest.specialRequests}
           onToggle={toggleSpecialRequest}
         />
-        <PriceBreakdown pricing={pricing} quote={quote} />
+        <PriceBreakdown
+          quote={quote}
+          pricing={pricing}
+          nights={nights}
+          rooms={search.rooms}
+          onRetry={retryQuote}
+        />
       </div>
 
       <StickyActionBar>
@@ -141,7 +166,11 @@ export const CheckoutSection = () => {
           <div className="min-w-0 flex-1">
             <p className="text-[10px] text-slate-500">Total Pembayaran</p>
             <p className="truncate text-[17px] font-bold text-primary">
-              {formatCurrency(quote ? Number(quote.total) : pricing.total)}
+              {quote
+                ? formatCurrency(Number(quote.total))
+                : pricing
+                  ? formatCurrency(pricing.total)
+                  : 'Menghitung…'}
             </p>
           </div>
           <Button
@@ -149,6 +178,7 @@ export const CheckoutSection = () => {
             size="lg"
             onClick={handleSubmit}
             isLoading={submitting}
+            disabled={apiMode && quote === null}
             className="shrink-0"
           >
             Lanjut Bayar

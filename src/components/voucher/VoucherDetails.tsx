@@ -3,7 +3,19 @@ import { getPaymentMethod } from '@/data/mockData';
 import { formatCurrency, formatDateWithDay, formatDecimal, formatReviewCount } from '@/lib/formatters';
 import type { Booking } from '@/types/booking';
 
-export const VoucherDetails = ({ booking }: { booking: Booking }) => {
+interface VoucherDetailsProps {
+  booking: Booking;
+  /** False while the booking still awaits payment. */
+  paid?: boolean;
+  /** Server-reported method name; falls back to the client's method label. */
+  methodLabel?: string | null;
+}
+
+export const VoucherDetails = ({
+  booking,
+  paid = true,
+  methodLabel = null,
+}: VoucherDetailsProps) => {
   const method = getPaymentMethod(booking.method);
   const guestName = booking.guest.bookingForOther
     ? booking.guest.guestName
@@ -85,9 +97,17 @@ export const VoucherDetails = ({ booking }: { booking: Booking }) => {
           </div>
           <div className="flex items-start justify-between gap-3">
             <dt className="text-slate-500">Pembayaran</dt>
-            <dd className="text-right font-semibold text-emerald-600">
-              LUNAS
-              <span className="block text-[10px] font-normal text-slate-500">{method.name}</span>
+            <dd
+              className={
+                paid
+                  ? 'text-right font-semibold text-emerald-600'
+                  : 'text-right font-semibold text-amber-600'
+              }
+            >
+              {paid ? 'LUNAS' : 'BELUM DIBAYAR'}
+              <span className="block text-[10px] font-normal text-slate-500">
+                {methodLabel ?? method.name}
+              </span>
             </dd>
           </div>
           <div className="flex items-start justify-between gap-3 border-t border-dashed border-slate-200 pt-2">

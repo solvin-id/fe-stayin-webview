@@ -4,7 +4,8 @@ export const TAX_RATE = 0.1;
 
 export const PROMO_DISCOUNT = 50_000;
 
-export const PAYMENT_WINDOW_SECONDS = 15 * 60;
+/** Mock-mode hold: same 30 minutes the API enforces. */
+export const DEFAULT_PAYMENT_WINDOW_MS = 30 * 60 * 1000;
 
 export const buildPriceSummary = (
   pricePerNight: number,

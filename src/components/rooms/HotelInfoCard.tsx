@@ -2,7 +2,14 @@ import { MapPin, ShieldCheck, Star } from 'lucide-react';
 import { formatDecimal, formatReviewCount } from '@/lib/formatters';
 import type { Hotel } from '@/types/booking';
 
-export const HotelInfoCard = ({ hotel }: { hotel: Hotel }) => {
+export const HotelInfoCard = ({
+  hotel,
+  hasRefundablePackage = false,
+}: {
+  hotel: Hotel;
+  /** True only when one of the listed packages really allows a free cancellation. */
+  hasRefundablePackage?: boolean;
+}) => {
   // Tenant profiles may not carry rating/review/distance data; never render a
   // placeholder zero as if it were a real guest score.
   const hasRating = hotel.rating > 0;
@@ -20,9 +27,11 @@ export const HotelInfoCard = ({ hotel }: { hotel: Hotel }) => {
         ) : (
           <span className="text-[11px] font-semibold text-slate-500">Properti resmi</span>
         )}
-        <span className="ml-auto rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
-          <ShieldCheck size={10} className="mr-0.5 inline" /> Refundable tersedia
-        </span>
+        {hasRefundablePackage ? (
+          <span className="ml-auto rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
+            <ShieldCheck size={10} className="mr-0.5 inline" /> Refundable tersedia
+          </span>
+        ) : null}
       </div>
       <p className="mt-1.5 flex items-start gap-1 text-[11px] leading-relaxed text-slate-500">
         <MapPin size={12} className="mt-0.5 shrink-0" />

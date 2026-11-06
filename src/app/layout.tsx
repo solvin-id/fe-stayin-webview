@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Stayin | Grand Horizon Hotel Solo',
+  title: 'Stayin',
   description:
     'Booking engine hotel mobile untuk Alfa Teve: pilih kamar, bayar, dan terima e-voucher dalam satu alur.',
   applicationName: 'Stayin Webview',

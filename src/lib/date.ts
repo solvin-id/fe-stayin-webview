@@ -5,6 +5,9 @@ export const toIsoDate = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+/** Today on the device clock, as the API's `YYYY-MM-DD`. */
+export const todayISO = (): string => toIsoDate(new Date());
+
 export const parseIsoDate = (iso: string): Date => {
   const [year, month, day] = iso.split('-').map(Number);
   return new Date(year, month - 1, day);

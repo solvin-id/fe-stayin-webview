@@ -2,7 +2,6 @@
 
 import { cn } from '@/lib/utils';
 import { buildMonthCells } from '@/lib/date';
-import { formatShortPrice } from '@/lib/formatters';
 
 const WEEKDAYS = ['M', 'S', 'S', 'R', 'K', 'J', 'S'];
 
@@ -12,7 +11,6 @@ interface CalendarGridProps {
   checkIn: string;
   checkOut: string;
   minIso: string;
-  nightlyRate: number;
   onSelect: (iso: string) => void;
 }
 
@@ -22,7 +20,6 @@ export const CalendarGrid = ({
   checkIn,
   checkOut,
   minIso,
-  nightlyRate,
   onSelect,
 }: CalendarGridProps) => {
   const cells = buildMonthCells(year, month);
@@ -69,16 +66,6 @@ export const CalendarGrid = ({
               )}
             >
               <span>{Number(iso.slice(8, 10))}</span>
-              {disabled ? null : (
-                <span
-                  className={cn(
-                    'text-[9px] font-medium leading-none',
-                    isStart || isEnd ? 'text-white/85' : 'text-slate-400'
-                  )}
-                >
-                  {formatShortPrice(nightlyRate)}
-                </span>
-              )}
             </button>
           );
         })}
