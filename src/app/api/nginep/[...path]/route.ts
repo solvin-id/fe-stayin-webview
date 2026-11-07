@@ -10,6 +10,7 @@ const ALLOWED_ROOTS: Record<string, true> = {
   availability: true,
   booking: true,
   payment: true,
+  chat: true,
 };
 const FORWARDED_HEADERS = [
   'authorization',

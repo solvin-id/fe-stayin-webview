@@ -9,6 +9,7 @@ import { HotelsScreen } from '@/components/hotels/HotelsScreen';
 import { RoomsScreen } from '@/components/rooms/RoomsScreen';
 import { VoucherSection } from '@/components/VoucherSection';
 import { ToastHost } from '@/components/ui/ToastHost';
+import { ChatWidget } from '@/components/chat/ChatWidget';
 import { getHotelGroupById } from '@/data/hotelGroups';
 import { useHostBottomOffset } from '@/hooks/useHostBottomOffset';
 import { useHostContext } from '@/hooks/useHostContext';
@@ -86,6 +87,7 @@ export default function Page() {
       {!activeGroup && step === 5 && selectedRoomId ? <PaymentSection /> : null}
       {!activeGroup && step === 6 ? <VoucherSection /> : null}
       <ToastHost />
+      <ChatWidget />
     </div>
   );
 }
